@@ -53,14 +53,27 @@ export default function PoemCard({ poem, index = 0, collection }: Props) {
             }}
           />
 
-          {/* 顶部：节气印章 + 时间 */}
+          {/* 顶部：藏印章 + 时间 */}
           <div className="flex items-start justify-between mb-4 relative z-10">
-            <SealStamp
-              term={poem.solarTerm}
-              size="sm"
-              color={meta?.color}
-              animated={false}
-            />
+            {collection ? (
+              <div
+                className="w-9 h-9 rounded-md flex items-center justify-center text-white text-lg font-bold shadow-sm"
+                style={{
+                  backgroundColor: collection.color,
+                  boxShadow: `0 2px 6px ${collection.color}30`,
+                }}
+                title={collection.name}
+              >
+                {collection.seal}
+              </div>
+            ) : (
+              <SealStamp
+                term={poem.solarTerm}
+                size="sm"
+                color={meta?.color}
+                animated={false}
+              />
+            )}
 
             <div className="flex flex-col items-end gap-1">
               {poem.isFavorite && (

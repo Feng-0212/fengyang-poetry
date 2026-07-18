@@ -104,7 +104,7 @@ export async function ensureDefaultCollections(): Promise<void> {
       name: "童心斋",
       subname: "童趣启蒙",
       blurb: "鹅鹅鹅曲项向天歌",
-      seal: "心",
+      seal: "童",
       glyph: "🪁",
       color: "#E8A87C",
       accent: "#F4C9A0",

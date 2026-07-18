@@ -50,6 +50,19 @@ export default function TrashPage() {
     await loadTrash();
   }, [loadTrash]);
 
+  const handleRestoreWithPassword = useCallback((id: string) => {
+    requirePassword(() => handleRestore(id));
+  }, [requirePassword, handleRestore]);
+
+  const handleBatchRestoreWithPassword = useCallback(() => {
+    if (selected.size === 0) return;
+    if (!confirm(`确定要恢复选中的 ${selected.size} 首诗词吗？`)) return;
+    requirePassword(async () => {
+      for (const id of selected) await restorePoem(id);
+      setSelected(new Set()); setSelectMode(false); await loadTrash();
+    });
+  }, [requirePassword, selected, loadTrash]);
+
   const handlePermanentDelete = useCallback(async (id: string) => {
     if (!confirm("确定要永久删除这首诗词吗？此操作不可恢复。")) return;
     await permanentlyDeletePoem(id);
@@ -62,11 +75,7 @@ export default function TrashPage() {
     setSelected(newSet);
   };
 
-  const handleBatchRestore = async () => {
-    if (!confirm(`确定要恢复选中的 ${selected.size} 首诗词吗？`)) return;
-    for (const id of selected) await restorePoem(id);
-    setSelected(new Set()); setSelectMode(false); await loadTrash();
-  };
+  const handleBatchRestore = handleBatchRestoreWithPassword;
 
   const handleBatchDelete = async () => {
     if (!confirm(`确定要永久删除选中的 ${selected.size} 首诗词吗？此操作不可恢复！`)) return;
@@ -137,7 +146,7 @@ export default function TrashPage() {
                     selectMode={selectMode}
                     selected={selected.has(poem.id)}
                     onToggleSelect={() => toggleSelect(poem.id)}
-                    onRestore={() => handleRestore(poem.id)}
+                    onRestore={() => handleRestoreWithPassword(poem.id)}
                     onDelete={() => requirePassword(() => handlePermanentDelete(poem.id))}
                   />
                 ))}
