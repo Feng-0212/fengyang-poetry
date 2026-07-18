@@ -7,11 +7,20 @@ import type { Poem } from "@/types/poem";
 async function getKv() {
   try {
     const mod = await import("@upstash/redis");
-    if (process.env.UPSTASH_REDIS_REST_URL && mod.Redis) {
-      return new mod.Redis({
-        url: process.env.UPSTASH_REDIS_REST_URL,
-        token: process.env.UPSTASH_REDIS_REST_TOKEN || "",
-      });
+    if (mod.Redis) {
+      // 兼容 Upstash Redis 和 Vercel KV 两种环境变量格式
+      const url =
+        process.env.UPSTASH_REDIS_REST_URL ||
+        process.env.KV_REST_API_URL ||
+        process.env.REDIS_URL ||
+        "";
+      const token =
+        process.env.UPSTASH_REDIS_REST_TOKEN ||
+        process.env.KV_REST_API_TOKEN ||
+        "";
+      if (url) {
+        return new mod.Redis({ url, token });
+      }
     }
   } catch {}
   return null;
