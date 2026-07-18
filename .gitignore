@@ -43,3 +43,5 @@ next-env.d.ts
 
 # Uploads (if any user uploads)
 public/uploads/
+
+.vercel

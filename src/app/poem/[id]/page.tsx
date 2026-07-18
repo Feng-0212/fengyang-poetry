@@ -30,7 +30,7 @@ interface Props {
 export default function PoemDetailPage({ params }: Props) {
   const { id } = use(params);
   const router = useRouter();
-  const { poem, loading } = usePoem(id);
+  const { poem, loading, refresh: refreshPoem } = usePoem(id);
   const solarTermHook = useSolarTerm();
   const [collection, setCollection] = useState<Collection | null>(null);
 
@@ -101,6 +101,7 @@ export default function PoemDetailPage({ params }: Props) {
 
   const handleToggleFavorite = async () => {
     await toggleFavorite(poem.id);
+    await refreshPoem();
   };
 
   return (
