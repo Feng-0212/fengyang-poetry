@@ -1,14 +1,15 @@
 // ============================================================
 // 密码门 — 写诗/改诗/删诗操作保护
-// 密码从环境变量 NEXT_PUBLIC_POEM_PASSWORD 读取
+// 优先从环境变量 NEXT_PUBLIC_POEM_PASSWORD 读取
 // （避免明文出现在 Git 仓库中，请勿提交 .env.local）
+// fallback：环境变量未设时使用默认 zsklj
 // ============================================================
 "use client";
 
 import { useState, createContext, useContext, useCallback, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const PASSWORD = process.env.NEXT_PUBLIC_POEM_PASSWORD || "";
+const PASSWORD = process.env.NEXT_PUBLIC_POEM_PASSWORD || "zsklj";
 
 interface AuthCtx {
   authenticated: boolean;

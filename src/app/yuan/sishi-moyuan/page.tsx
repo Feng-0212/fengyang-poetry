@@ -13,7 +13,7 @@ import SolarTermNav from "@/components/poem/SolarTermNav";
 import { useSolarTerm } from "@/hooks/useSolarTerm";
 import { usePoems, useSeasonPoems } from "@/hooks/usePoem";
 import { motion } from "framer-motion";
-import { COLLECTION_IDS } from "@/types/poem";
+import { COLLECTION_IDS, type Collection } from "@/types/poem";
 import { getCollectionBySlug } from "@/lib/db";
 import type { SeasonKey } from "@/types/poem";
 
@@ -35,11 +35,15 @@ export default function SishiMoyuanPage() {
   const solarTerm = useSolarTerm();
   const [activeSeason, setActiveSeason] = useState<string>("all");
   const [colId, setColId] = useState<string | undefined>(undefined);
+  const [sishiMoyuan, setSishiMoyuan] = useState<Collection | null>(null);
 
   // 获取四时墨苑的真实数据库 ID（而非 slug）
   useEffect(() => {
     getCollectionBySlug(COLLECTION_IDS.SISHI_MOYUAN).then((c) => {
-      if (c) setColId(c.id);
+      if (c) {
+        setColId(c.id);
+        setSishiMoyuan(c);
+      }
     });
   }, []);
 
@@ -204,7 +208,7 @@ export default function SishiMoyuanPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pb-20">
               {filteredPoems.map((poem, i) => (
-                <PoemCard key={poem.id} poem={poem} index={i} />
+                <PoemCard key={poem.id} poem={poem} index={i} collection={sishiMoyuan} />
               ))}
             </div>
           )}

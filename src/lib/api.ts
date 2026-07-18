@@ -46,7 +46,7 @@ export async function getAllPoemsIncludingDeleted(): Promise<Poem[]> {
 export async function restorePoem(id: string): Promise<void> {
   await apiFetch(`/poem/${id}`, {
     method: "PUT",
-    body: JSON.stringify({ deletedAt: undefined }),
+    body: JSON.stringify({ deletedAt: null }),
   });
 }
 
