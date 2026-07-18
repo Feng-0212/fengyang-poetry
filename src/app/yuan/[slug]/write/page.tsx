@@ -12,10 +12,11 @@ import AtmosphereLayer from "@/components/poem/AtmosphereLayer";
 import { useSolarTerm } from "@/hooks/useSolarTerm";
 import { useCollection } from "@/hooks/useCollection";
 import { SOLAR_TERMS_META } from "@/lib/solarterms";
-import { addPoem } from "@/lib/db";
+import { addPoem } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import type { SeasonKey } from "@/types/poem";
 import { motion, AnimatePresence } from "framer-motion";
+import { usePasswordGate } from "@/components/auth/PasswordGate";
 
 const SEASONS: { key: SeasonKey; label: string; emoji: string }[] = [
   { key: "spring", label: "春", emoji: "🌸" },
@@ -33,6 +34,8 @@ export default function CollectionWritePage({ params }: Props) {
   const router = useRouter();
   const solarTerm = useSolarTerm();
   const { collection, loading: colLoading } = useCollection(slug);
+  const { requirePassword } = usePasswordGate();
+  const showSeasonFields = slug === "sishi-moyuan";
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -194,6 +197,7 @@ export default function CollectionWritePage({ params }: Props) {
           </div>
 
           <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            {showSeasonFields && (<>
             <div>
               <label className="block text-xs text-ink-light mb-2 tracking-wider uppercase">季节</label>
               <div className="flex gap-2">
@@ -233,6 +237,7 @@ export default function CollectionWritePage({ params }: Props) {
                 ))}
               </select>
             </div>
+            </>)}
           </div>
 
           <div className="mt-4 flex items-center gap-4">
@@ -264,7 +269,7 @@ export default function CollectionWritePage({ params }: Props) {
 
           <div className="mt-8 flex justify-center gap-4">
             <button
-              onClick={handleSubmit}
+              onClick={() => requirePassword(handleSubmit)}
               disabled={saving || saved}
               className={cn(
                 "inline-flex items-center gap-2 px-8 py-3 rounded-lg text-sm font-medium text-white transition-all duration-300",

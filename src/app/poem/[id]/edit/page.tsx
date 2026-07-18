@@ -11,9 +11,10 @@ import Footer from "@/components/layout/Footer";
 import { usePoem } from "@/hooks/usePoem";
 import { useSolarTerm } from "@/hooks/useSolarTerm";
 import { SOLAR_TERMS_META } from "@/lib/solarterms";
-import { updatePoem } from "@/lib/db";
+import { updatePoem } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { usePasswordGate } from "@/components/auth/PasswordGate";
 import type { SeasonKey, SolarTermKey } from "@/types/poem";
 
 const SEASONS: { key: SeasonKey; label: string; emoji: string }[] = [
@@ -32,6 +33,7 @@ export default function EditPoemPage({ params }: Props) {
   const router = useRouter();
   const { poem, loading } = usePoem(id);
   const solarTermHook = useSolarTerm();
+  const { requirePassword } = usePasswordGate();
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -350,7 +352,7 @@ export default function EditPoemPage({ params }: Props) {
               取消
             </Link>
             <button
-              onClick={handleSubmit}
+              onClick={() => requirePassword(handleSubmit)}
               disabled={saving || saved || !hasChanges}
               className={cn(
                 "inline-flex items-center gap-2 px-8 py-3 rounded-lg text-sm font-medium text-white transition-all duration-300",
