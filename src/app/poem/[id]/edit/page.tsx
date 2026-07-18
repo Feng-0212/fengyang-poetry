@@ -12,10 +12,12 @@ import { usePoem } from "@/hooks/usePoem";
 import { useSolarTerm } from "@/hooks/useSolarTerm";
 import { SOLAR_TERMS_META } from "@/lib/solarterms";
 import { updatePoem } from "@/lib/api";
+import { getCollectionById } from "@/lib/db";
+import { COLLECTION_IDS } from "@/types/poem";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePasswordGate } from "@/components/auth/PasswordGate";
-import type { SeasonKey, SolarTermKey } from "@/types/poem";
+import type { SeasonKey, SolarTermKey, Collection } from "@/types/poem";
 
 const SEASONS: { key: SeasonKey; label: string; emoji: string }[] = [
   { key: "spring", label: "春", emoji: "🌸" },
@@ -34,6 +36,18 @@ export default function EditPoemPage({ params }: Props) {
   const { poem, loading } = usePoem(id);
   const solarTermHook = useSolarTerm();
   const { requirePassword } = usePasswordGate();
+
+  // 获取诗词所在藏
+  const [collection, setCollection] = useState<Collection | null>(null);
+  useEffect(() => {
+    if (poem?.collectionId) {
+      getCollectionById(poem.collectionId).then((c) => setCollection(c ?? null));
+    }
+  }, [poem?.collectionId]);
+
+  // 仅四时墨苑显示节气字段
+  const isSishiMoyuan = collection?.slug === COLLECTION_IDS.SISHI_MOYUAN;
+  const themeColor = collection?.color || solarTermHook.color;
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -240,7 +254,8 @@ export default function EditPoemPage({ params }: Props) {
             />
           </div>
 
-          {/* 季节 & 节气选择 */}
+          {/* 季节 & 节气选择（仅四时墨苑显示） */}
+          {isSishiMoyuan && (
           <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs text-ink-light mb-2 tracking-wider uppercase">
@@ -295,6 +310,7 @@ export default function EditPoemPage({ params }: Props) {
               </select>
             </div>
           </div>
+          )}
 
           {/* 书写方向切换 */}
           <div className="mt-4 flex items-center gap-4">

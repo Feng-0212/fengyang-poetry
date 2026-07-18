@@ -19,7 +19,8 @@ import { useEffect, useState } from "react";
 import type { Collection } from "@/types/poem";
 import { getSolarTermMeta, getSeasonName } from "@/lib/solarterms";
 import { formatDate } from "@/lib/utils";
-import { deletePoem, toggleFavorite } from "@/lib/db";
+import { deletePoem, toggleFavorite } from "@/lib/api";
+import { usePasswordGate } from "@/components/auth/PasswordGate";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +33,7 @@ export default function PoemDetailPage({ params }: Props) {
   const router = useRouter();
   const { poem, loading, refresh: refreshPoem } = usePoem(id);
   const solarTermHook = useSolarTerm();
+  const { requirePassword } = usePasswordGate();
   const [collection, setCollection] = useState<Collection | null>(null);
 
   useEffect(() => {
@@ -93,10 +95,12 @@ export default function PoemDetailPage({ params }: Props) {
     }, []);
 
   const handleDelete = async () => {
-    if (confirm("确定要删除这首诗词吗？")) {
-      await deletePoem(poem.id);
-      router.push(backHref);
-    }
+    await requirePassword(async () => {
+      if (confirm("确定要删除这首诗词吗？")) {
+        await deletePoem(poem.id);
+        router.push(backHref);
+      }
+    });
   };
 
   const handleToggleFavorite = async () => {

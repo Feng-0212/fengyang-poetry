@@ -65,7 +65,7 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
@@ -73,7 +73,14 @@ export async function DELETE(
   const idx = poems.findIndex((p) => p.id === id);
   if (idx === -1) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  poems[idx].deletedAt = Date.now();
+  const url = new URL(req.url);
+  if (url.searchParams.get("permanent") === "1") {
+    // 物理删除
+    poems.splice(idx, 1);
+  } else {
+    // 软删除
+    poems[idx].deletedAt = Date.now();
+  }
   await setPoems(poems);
   return NextResponse.json({ ok: true });
 }

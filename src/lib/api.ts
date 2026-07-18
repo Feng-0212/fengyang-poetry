@@ -36,6 +36,25 @@ export async function getAllPoems(): Promise<Poem[]> {
     .sort((a, b) => b.createdAt - a.createdAt);
 }
 
+/** 获取全部诗词（包括已软删除的） */
+export async function getAllPoemsIncludingDeleted(): Promise<Poem[]> {
+  const res = await apiFetch<{ poems: Poem[] }>("/poems");
+  return res.poems.sort((a, b) => b.createdAt - a.createdAt);
+}
+
+/** 恢复软删除的诗词 */
+export async function restorePoem(id: string): Promise<void> {
+  await apiFetch(`/poem/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({ deletedAt: undefined }),
+  });
+}
+
+/** 永久删除诗词（从 Redis 物理删除） */
+export async function permanentlyDeletePoem(id: string): Promise<void> {
+  await apiFetch(`/poem/${id}?permanent=1`, { method: "DELETE" });
+}
+
 /** 获取单首诗词 */
 export async function getPoem(id: string): Promise<Poem | null> {
   try {

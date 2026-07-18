@@ -94,7 +94,7 @@ export default function PoemCard({ poem, index = 0, collection }: Props) {
             {preview}
           </div>
 
-          {/* 底部标签：显示藏名 */}
+          {/* 底部标签：显示藏印章字 */}
           <div className="flex items-center justify-between relative z-10">
             <div
               className="text-xs px-2 py-0.5 rounded-full"
@@ -103,7 +103,7 @@ export default function PoemCard({ poem, index = 0, collection }: Props) {
                 color: collection ? collection.color : meta?.color || "#8B9A6B",
               }}
             >
-              {collection ? collection.subname : meta?.name}
+              {collection ? collection.seal : meta?.name}
             </div>
 
             {/* 右侧箭头 */}
