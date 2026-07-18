@@ -8,14 +8,15 @@ import Link from "next/link";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import { getSolarTermMeta } from "@/lib/solarterms";
 import SealStamp from "@/components/seals/SealStamp";
-import type { Poem } from "@/types/poem";
+import type { Poem, Collection } from "@/types/poem";
 
 interface Props {
   poem: Poem;
   index?: number;
+  collection?: Collection | null;
 }
 
-export default function PoemCard({ poem, index = 0 }: Props) {
+export default function PoemCard({ poem, index = 0, collection }: Props) {
   const meta = getSolarTermMeta(poem.solarTerm);
 
   // 截取前 4 句作为预览
@@ -93,16 +94,16 @@ export default function PoemCard({ poem, index = 0 }: Props) {
             {preview}
           </div>
 
-          {/* 底部标签 */}
+          {/* 底部标签：显示藏名 */}
           <div className="flex items-center justify-between relative z-10">
             <div
               className="text-xs px-2 py-0.5 rounded-full"
               style={{
-                backgroundColor: `${meta?.color || "#8B9A6B"}15`,
-                color: meta?.color || "#8B9A6B",
+                backgroundColor: collection ? `${collection.color}15` : `${meta?.color || "#8B9A6B"}15`,
+                color: collection ? collection.color : meta?.color || "#8B9A6B",
               }}
             >
-              {meta?.name}
+              {collection ? collection.subname : meta?.name}
             </div>
 
             {/* 右侧箭头 */}

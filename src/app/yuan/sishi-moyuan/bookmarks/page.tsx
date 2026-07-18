@@ -3,7 +3,7 @@
 // ============================================================
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -12,6 +12,7 @@ import { getSolarTermMeta } from "@/lib/solarterms";
 import { cn } from "@/lib/utils";
 import { WALLPAPER_SIZES } from "@/types/poem";
 import { COLLECTION_IDS } from "@/types/poem";
+import { getCollectionBySlug } from "@/lib/db";
 import type { WallpaperOptions, Poem } from "@/types/poem";
 
 const WALLPAPER_STYLES = [
@@ -27,7 +28,13 @@ const SIZE_OPTIONS = [
 ] as const;
 
 export default function BookmarksPage() {
-  const { poems } = usePoems(COLLECTION_IDS.SISHI_MOYUAN);
+  const [colId, setColId] = useState<string | undefined>(undefined);
+  useEffect(() => {
+    getCollectionBySlug(COLLECTION_IDS.SISHI_MOYUAN).then((c) => {
+      if (c) setColId(c.id);
+    });
+  }, []);
+  const { poems } = usePoems(colId);
   const [selectedPoem, setSelectedPoem] = useState<Poem | null>(null);
   const [size, setSize] = useState<WallpaperOptions["size"]>("mobile");
   const [style, setStyle] = useState<WallpaperOptions["style"]>("ink");

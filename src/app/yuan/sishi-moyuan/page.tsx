@@ -11,10 +11,10 @@ import AtmosphereLayer from "@/components/poem/AtmosphereLayer";
 import PoemCard from "@/components/poem/PoemCard";
 import SolarTermNav from "@/components/poem/SolarTermNav";
 import { useSolarTerm } from "@/hooks/useSolarTerm";
-import { usePoems } from "@/hooks/usePoem";
-import { useSeasonPoems } from "@/hooks/usePoem";
+import { usePoems, useSeasonPoems } from "@/hooks/usePoem";
 import { motion } from "framer-motion";
 import { COLLECTION_IDS } from "@/types/poem";
+import { getCollectionBySlug } from "@/lib/db";
 import type { SeasonKey } from "@/types/poem";
 
 const SEASON_LABELS: Record<string, string> = {
@@ -34,11 +34,20 @@ const SEASON_ICONS: Record<string, string> = {
 export default function SishiMoyuanPage() {
   const solarTerm = useSolarTerm();
   const [activeSeason, setActiveSeason] = useState<string>("all");
-  const { poems, loading } = usePoems(COLLECTION_IDS.SISHI_MOYUAN);
-  const { poems: springPoems } = useSeasonPoems("spring", COLLECTION_IDS.SISHI_MOYUAN);
-  const { poems: summerPoems } = useSeasonPoems("summer", COLLECTION_IDS.SISHI_MOYUAN);
-  const { poems: autumnPoems } = useSeasonPoems("autumn", COLLECTION_IDS.SISHI_MOYUAN);
-  const { poems: winterPoems } = useSeasonPoems("winter", COLLECTION_IDS.SISHI_MOYUAN);
+  const [colId, setColId] = useState<string | undefined>(undefined);
+
+  // 获取四时墨苑的真实数据库 ID（而非 slug）
+  useEffect(() => {
+    getCollectionBySlug(COLLECTION_IDS.SISHI_MOYUAN).then((c) => {
+      if (c) setColId(c.id);
+    });
+  }, []);
+
+  const { poems, loading } = usePoems(colId);
+  const { poems: springPoems } = useSeasonPoems("spring", colId);
+  const { poems: summerPoems } = useSeasonPoems("summer", colId);
+  const { poems: autumnPoems } = useSeasonPoems("autumn", colId);
+  const { poems: winterPoems } = useSeasonPoems("winter", colId);
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);

@@ -107,3 +107,11 @@ export const WALLPAPER_SIZES: Record<WallpaperSize, { width: number; height: num
   tablet: { width: 1536, height: 2048 },
   desktop: { width: 1920, height: 1080 },
 };
+
+// ============================================================
+// Poem + Collection 组合类型（用于展示时携带藏信息）
+// ============================================================
+export interface PoemWithCollection {
+  poem: Poem;
+  collection: Collection;
+}

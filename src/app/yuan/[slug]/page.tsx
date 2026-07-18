@@ -162,7 +162,7 @@ export default function CollectionPage({ params }: Props) {
                 <p className="text-ink-light mb-4">{collection.blurb}</p>
                 <div className="flex items-center gap-4">
                   <span className="text-sm text-ink-light/60">
-                    {collection.poemCount} 首诗词
+                    {poems.length} 首诗词
                   </span>
                   <Link
                     href={`/yuan/${slug}/write`}
@@ -209,7 +209,7 @@ export default function CollectionPage({ params }: Props) {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {poems.map((poem, i) => (
-                <PoemCard key={poem.id} poem={poem} index={i} />
+                <PoemCard key={poem.id} poem={poem} index={i} collection={collection} />
               ))}
             </div>
           )}
