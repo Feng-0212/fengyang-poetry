@@ -371,10 +371,11 @@ export default function SettingsPage() {
         <div className="mt-8 p-4 rounded-lg bg-rice border border-ink/8 text-xs text-ink-light leading-relaxed">
           <p className="font-medium text-ink mb-1">数据存储说明</p>
           <p>
-            所有诗词数据存储在您本地浏览器的 IndexedDB
-            中，不会上传至任何服务器。
+            所有诗词数据存储于云端共享数据库（Upstash Redis），
+            所有访客看到的都是同一份诗词。
             <br />
-            清除浏览器数据将导致诗词丢失，建议定期导出备份。
+            本地浏览器会缓存一份以便离线浏览，清除浏览器数据不影响云端内容。
+            建议定期导出备份。
           </p>
         </div>
       </main>
