@@ -9,18 +9,22 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { usePoems } from "@/hooks/usePoem";
 import { useSolarTerm } from "@/hooks/useSolarTerm";
-import { exportAllData, importData } from "@/lib/db";
+import { exportAllData, importData, getAllCollections } from "@/lib/db";
+import { addPoem as addPoemApi, getAllPoems } from "@/lib/api";
 import { downloadFile, formatDate, cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { SOLAR_TERMS_META } from "@/lib/solarterms";
+import { usePasswordGate } from "@/components/auth/PasswordGate";
 
 export default function SettingsPage() {
   const solarTerm = useSolarTerm();
   const { poems, refresh } = usePoems();
+  const { requirePassword } = usePasswordGate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [seeding, setSeeding] = useState(false);
   const [notification, setNotification] = useState<{
     type: "success" | "error" | "info";
     message: string;
@@ -127,9 +131,29 @@ export default function SettingsPage() {
         throw new Error("文件格式不正确");
       }
 
-      await importData(poemsToImport);
+      // 走 API 导入（云端持久化）
+      const cols = await getAllCollections();
+      const colBySlug: Record<string, string> = {};
+      cols.forEach((c) => (colBySlug[c.slug] = c.id));
+      let count = 0;
+      for (const p of poemsToImport) {
+        let cid = p.collectionId;
+        if (colBySlug[cid]) cid = colBySlug[cid];
+        if (!cid && cols.length > 0) cid = cols[0].id;
+        if (!cid) continue;
+        await addPoemApi({
+          collectionId: cid,
+          title: p.title || "无题",
+          content: p.content || "",
+          season: p.season || "spring",
+          solarTerm: p.solarTerm || "lichun",
+          annotation: p.annotation,
+          isFavorite: !!p.isFavorite,
+        });
+        count++;
+      }
       await refresh();
-      showNotification("success", `已导入 ${poemsToImport.length} 首诗词`);
+      showNotification("success", `已导入 ${count} 首诗词到云端`);
     } catch (e) {
       showNotification("error", "导入失败，文件格式可能不正确");
       console.error(e);
@@ -138,6 +162,50 @@ export default function SettingsPage() {
       // 重置 input
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
+  };
+
+  // 导入示例数据
+  const handleSeed = async () => {
+    await requirePassword(async () => {
+      setSeeding(true);
+      try {
+        const cols = await getAllCollections();
+        const bySlug: Record<string, string> = {};
+        cols.forEach((c) => (bySlug[c.slug] = c.id));
+
+        const seeds = [
+          { slug: "sishi-moyuan", title: "小暑·竹下", content: "竹影摇风过小窗，蝉声带暑入茶汤。\n闲来不卷书三页，且让清凉一寸长。", season: "summer", solarTerm: "xiaoshu" },
+          { slug: "sishi-moyuan", title: "春分·一树梨云", content: "半城风暖半城云，一树梨花开不分。\n燕子衔香过江去，误人深处是烟村。", season: "spring", solarTerm: "chunfen" },
+          { slug: "yuexia-shanhe", title: "月下独酌", content: "举杯邀月月先行，三影随人到处醒。\n不是独酌无伴侣，清风绕过八千峰。", season: "autumn", solarTerm: "qiufen" },
+          { slug: "guanshan-ci", title: "关山词", content: "关山月色一千重，羌笛声中万马慵。\n何日将军归未晚，梅花照入满头篷。", season: "winter", solarTerm: "daxue" },
+          { slug: "yanyu-ge", title: "雨霖铃·烟雨", content: "烟雨江南三月天，粉墙黑瓦水如年。\n一袭纸伞缓缓过，石板街上有流年。", season: "spring", solarTerm: "yushui" },
+          { slug: "tongxin-zhai", title: "鹅鹅鹅", content: "鹅鹅鹅，曲项向天歌。\n白毛浮绿水，红掌拨清波。", season: "summer", solarTerm: "xiaoshu" },
+          { slug: "xinshi-lin", title: "一棵开花的树", content: "如何让你遇见我\n在我最美丽的时刻\n为这\n我已在佛前求了五百年\n求佛让我们结一段尘缘", season: "spring", solarTerm: "qingming" },
+        ];
+
+        let count = 0;
+        for (const s of seeds) {
+          const cid = bySlug[s.slug];
+          if (!cid) continue;
+          await addPoemApi({
+            collectionId: cid,
+            title: s.title,
+            content: s.content,
+            season: s.season as any,
+            solarTerm: s.solarTerm as any,
+            isFavorite: false,
+          });
+          count++;
+        }
+        await refresh();
+        showNotification("success", `已添加 ${count} 首示例诗词到云端`);
+      } catch (e) {
+        showNotification("error", "示例数据添加失败");
+        console.error(e);
+      } finally {
+        setSeeding(false);
+      }
+    });
   };
 
   return (
@@ -287,6 +355,19 @@ export default function SettingsPage() {
               </span>
             </div>
           </button>
+
+          {/* 一键导入示例数据 */}
+          <div className="mt-4 pt-4 border-t border-ink/8">
+            <p className="text-xs text-ink-light/70 mb-3">清空了？一键补充示例诗词到云端：</p>
+            <button
+              onClick={handleSeed}
+              disabled={seeding}
+              className="w-full py-2.5 rounded-lg text-sm transition-all disabled:opacity-50"
+              style={{ backgroundColor: "rgba(193,74,63,0.08)", color: "#C14A3F" }}
+            >
+              {seeding ? "添加中..." : "· 导入示例数据（7首） ·"}
+            </button>
+          </div>
         </section>
 
         {/* 其他管理 */}
