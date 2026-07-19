@@ -18,6 +18,9 @@ interface Props {
 
 export default function PoemCard({ poem, index = 0, collection }: Props) {
   const meta = getSolarTermMeta(poem.solarTerm);
+  // 四时墨苑的诗词卡展示节气专属印章，藏印章「季」仅在首页藏格子里显示
+  const isSishiMoyuan = collection?.slug === "sishi-moyuan";
+  const showSolarTermSeal = isSishiMoyuan || !collection;
 
   // 截取前 4 句作为预览
   const preview = poem.content
@@ -55,7 +58,14 @@ export default function PoemCard({ poem, index = 0, collection }: Props) {
 
           {/* 顶部：藏印章 + 时间 */}
           <div className="flex items-start justify-between mb-4 relative z-10">
-            {collection ? (
+            {showSolarTermSeal ? (
+              <SealStamp
+                term={poem.solarTerm}
+                size="sm"
+                color={meta?.color}
+                animated={false}
+              />
+            ) : (
               <div
                 className="w-9 h-9 rounded-md flex items-center justify-center text-white text-lg font-bold shadow-sm"
                 style={{
@@ -66,13 +76,6 @@ export default function PoemCard({ poem, index = 0, collection }: Props) {
               >
                 {collection.seal}
               </div>
-            ) : (
-              <SealStamp
-                term={poem.solarTerm}
-                size="sm"
-                color={meta?.color}
-                animated={false}
-              />
             )}
 
             <div className="flex flex-col items-end gap-1">
@@ -112,11 +115,11 @@ export default function PoemCard({ poem, index = 0, collection }: Props) {
             <div
               className="text-xs px-2 py-0.5 rounded-full"
               style={{
-                backgroundColor: collection ? `${collection.color}15` : `${meta?.color || "#8B9A6B"}15`,
-                color: collection ? collection.color : meta?.color || "#8B9A6B",
+                backgroundColor: `${meta?.color || "#8B9A6B"}15`,
+                color: meta?.color || "#8B9A6B",
               }}
             >
-              {collection ? collection.seal : meta?.name}
+              {meta?.name}
             </div>
 
             {/* 右侧箭头 */}
