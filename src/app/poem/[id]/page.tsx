@@ -221,7 +221,16 @@ export default function PoemDetailPage({ params }: Props) {
               <div className="px-8 md:px-12 py-10">
                 {/* 印章 + 元信息 */}
                 <div className="flex items-center justify-between mb-8">
-                  <TraditionalSeal term={poem.solarTerm} size="lg" color={sealColor} />
+                  <div
+                    className="w-16 h-16 rounded-lg flex items-center justify-center text-white text-2xl font-bold shadow-lg"
+                    style={{
+                      backgroundColor: collection?.color || sealColor,
+                      boxShadow: `0 4px 12px ${(collection?.color || sealColor)}30`,
+                    }}
+                    title={collection?.name || meta?.name}
+                  >
+                    {collection?.seal || meta?.name?.slice(0, 1) || "诗"}
+                  </div>
                   <div className="text-right text-xs text-ink-light space-y-1">
                     <div className="text-ink-light/60">{seasonName}季</div>
                     <div>{formatDate(poem.createdAt)}</div>
