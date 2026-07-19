@@ -1,7 +1,7 @@
 // ============================================================
 // 服务端 API 客户端 — 共享数据层
 // ============================================================
-import type { Poem } from "@/types/poem";
+import type { Poem, Collection } from "@/types/poem";
 
 const BASE = "/api";
 
@@ -92,4 +92,21 @@ export async function toggleFavorite(id: string): Promise<void> {
 /** 删除藏（云端删除该藏下所有诗词） */
 export async function deleteCollectionApi(id: string): Promise<void> {
   await apiFetch(`/collection/${id}`, { method: "DELETE" });
+}
+
+/** 获取云端藏列表 */
+export async function getCollectionsApi(): Promise<Collection[]> {
+  const res = await apiFetch<{ collections: Collection[] }>("/collection");
+  return res.collections;
+}
+
+/** 创建藏（云端） */
+export async function addCollectionApi(
+  data: Omit<Collection, "id" | "createdAt" | "updatedAt" | "isSystem">
+): Promise<Collection> {
+  const res = await apiFetch<{ collection: Collection }>("/collection", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  return res.collection;
 }

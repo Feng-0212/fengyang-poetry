@@ -4,6 +4,7 @@
 import Dexie, { type Table } from "dexie";
 import type { Poem, Collection } from "@/types/poem";
 import { COLLECTION_IDS } from "@/types/poem";
+import { getCollectionsApi, addCollectionApi } from "./api";
 
 class PoetryDB extends Dexie {
   poems!: Table<Poem, string>;
@@ -229,6 +230,18 @@ export async function getPoemsBySeason(season: string): Promise<Poem[]> {
 // ============================================================
 export async function getAllCollections(): Promise<Collection[]> {
   await ensureDefaultCollections();
+
+  // 尝试从云端拉自定义藏，合并到本地
+  try {
+    const cloudCols = await getCollectionsApi();
+    if (cloudCols.length > 0) {
+      // 写入本地（自动去重）
+      await db.collections.bulkPut(cloudCols);
+    }
+  } catch {
+    // 云端不可用，继续用本地
+  }
+
   return await db.collections.toArray();
 }
 
@@ -257,7 +270,7 @@ export async function addCollection(
       "-" +
       Math.random().toString(36).slice(2, 6);
 
-  await db.collections.add({
+  const collection: Collection = {
     ...data,
     id,
     slug,
@@ -265,7 +278,15 @@ export async function addCollection(
     createdAt: now,
     updatedAt: now,
     poemCount: 0,
-  });
+  };
+
+  // 同步写入本地和云端
+  await db.collections.add(collection);
+  try {
+    await addCollectionApi(collection);
+  } catch {
+    // 云端同步失败不影响本地
+  }
 
   return id;
 }
