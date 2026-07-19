@@ -43,6 +43,8 @@ export default function WritePage() {
   const filteredSolarTerms = SOLAR_TERMS_META.filter(
     (st) => st.season === selectedSeason
   );
+  const displayTerm =
+    SOLAR_TERMS_META.find((st) => st.key === selectedSolarTerm) ?? solarTerm;
 
   const handleSubmit = useCallback(async () => {
     if (!title.trim()) { setError("请输入诗词标题"); return; }
@@ -104,8 +106,8 @@ export default function WritePage() {
             }}
           >
             <motion.div animate={{ scale: [0.9, 1] }} className="absolute top-6 right-6">
-              <div className="seal-stamp text-sm" style={{ backgroundColor: solarTerm.color }}>
-                {solarTerm.name}
+              <div className="seal-stamp text-sm" style={{ backgroundColor: displayTerm.color }}>
+                {displayTerm.name}
               </div>
             </motion.div>
 
@@ -114,7 +116,7 @@ export default function WritePage() {
                 placeholder="诗词标题"
                 className="w-full text-center font-[var(--font-mashan)] text-3xl text-ink-dark bg-transparent border-none outline-none placeholder:text-ink-light/30"
                 style={{ fontFamily: "var(--font-mashan)" }} />
-              <div className="h-px mt-4" style={{ background: `linear-gradient(to right, transparent, ${solarTerm.color}40, transparent)` }} />
+              <div className="h-px mt-4" style={{ background: `linear-gradient(to right, transparent, ${displayTerm.color}40, transparent)` }} />
             </div>
 
             <div className="mb-8">
@@ -131,7 +133,7 @@ export default function WritePage() {
                 style={{ fontFamily: "var(--font-lxgw)" }} />
             </div>
 
-            <div className="h-px mb-8" style={{ background: `linear-gradient(to right, transparent, ${solarTerm.color}40, transparent)` }} />
+            <div className="h-px mb-8" style={{ background: `linear-gradient(to right, transparent, ${displayTerm.color}40, transparent)` }} />
           </div>
 
           <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -145,7 +147,7 @@ export default function WritePage() {
                     if (first) setSelectedSolarTerm(first.key);
                   }}
                     className={cn("flex-1 py-2 rounded-lg text-sm transition-all border", selectedSeason === s.key ? "text-white border-transparent" : "text-ink-light border-ink/10 hover:border-ink/20")}
-                    style={selectedSeason === s.key ? { backgroundColor: solarTerm.color } : undefined}>
+                    style={selectedSeason === s.key ? { backgroundColor: displayTerm.color } : undefined}>
                     {s.emoji} {s.label}
                   </button>
                 ))}
