@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import type { SolarTermKey } from "@/types/poem";
 
 interface Props {
-  term: SolarTermKey | "诗" | "墨" | "心";
+  term: SolarTermKey | "诗" | "墨" | "童";
   size?: "sm" | "md" | "lg" | "xl";
   animated?: boolean;
   color?: string;
@@ -43,7 +43,7 @@ const SEAL_NAMES: Record<string, string> = {
   // 装饰字
   诗: "诗",
   墨: "墨",
-  心: "心",
+  童: "童",
 };
 
 const SIZE_MAP = {
