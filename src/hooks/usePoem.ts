@@ -57,20 +57,35 @@ export function usePoems(collectionId?: string) {
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    if (!collectionId) {
+    // collectionId 为 undefined/null → 查全部
+    if (collectionId === undefined || collectionId === null) {
+      setLoading(true);
+      try {
+        const all = await getAllPoems();
+        setPoems(all);
+        cachePoems(all);
+      } catch {
+        const all = await db.poems.toArray().then((a) => a.filter((p) => !p.deletedAt));
+        all.sort((a, b) => b.createdAt - a.createdAt);
+        setPoems(all);
+      }
+      setLoading(false);
+      return;
+    }
+    // collectionId 为空字符串 → 等待（不发请求），由 useEffect 监听变化
+    if (collectionId === "") {
       setPoems([]);
       setLoading(false);
       return;
     }
+    // 有 collectionId → 精确查询
     setLoading(true);
     try {
       const all = await getAllPoems();
       const filtered = all.filter((p) => p.collectionId === collectionId);
       setPoems(filtered);
-      // 后台回写缓存
       cachePoems(all);
     } catch {
-      // 降级到 IndexedDB
       const all = await db.poems.toArray();
       const active = all.filter((p) => !p.deletedAt);
       const filtered = active.filter((p) => p.collectionId === collectionId);
