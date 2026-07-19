@@ -87,6 +87,9 @@ export default function EditPoemPage({ params }: Props) {
   const filteredSolarTerms = SOLAR_TERMS_META.filter(
     (st) => st.season === selectedSeason
   );
+  const selectedTermMeta =
+    SOLAR_TERMS_META.find((st) => st.key === selectedSolarTerm) ?? SOLAR_TERMS_META[0];
+  const displayTerm = isSishiMoyuan ? selectedTermMeta : solarTermHook;
 
   const handleSubmit = useCallback(() => {
     requirePassword(async () => {
@@ -178,9 +181,9 @@ export default function EditPoemPage({ params }: Props) {
             >
               <div
                 className="seal-stamp text-sm"
-                style={{ backgroundColor: solarTermHook.color }}
+                style={{ backgroundColor: displayTerm.color }}
               >
-                {solarTermHook.name}
+                {displayTerm.name}
               </div>
             </motion.div>
 
@@ -205,7 +208,7 @@ export default function EditPoemPage({ params }: Props) {
               <div
                 className="h-px mt-4"
                 style={{
-                  background: `linear-gradient(to right, transparent, ${solarTermHook.color}40, transparent)`,
+                  background: `linear-gradient(to right, transparent, ${displayTerm.color}40, transparent)`,
                 }}
               />
             </div>
@@ -242,7 +245,7 @@ export default function EditPoemPage({ params }: Props) {
             <div
               className="h-px mb-8"
               style={{
-                background: `linear-gradient(to right, transparent, ${solarTermHook.color}40, transparent)`,
+                background: `linear-gradient(to right, transparent, ${displayTerm.color}40, transparent)`,
               }}
             />
           </div>
@@ -273,7 +276,7 @@ export default function EditPoemPage({ params }: Props) {
                     )}
                     style={
                       selectedSeason === s.key
-                        ? { backgroundColor: solarTermHook.color }
+                        ? { backgroundColor: displayTerm.color }
                         : undefined
                     }
                   >
