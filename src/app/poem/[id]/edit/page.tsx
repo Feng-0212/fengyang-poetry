@@ -88,40 +88,33 @@ export default function EditPoemPage({ params }: Props) {
     (st) => st.season === selectedSeason
   );
 
-  const handleSubmit = useCallback(async () => {
-    if (!poem) return;
+  const handleSubmit = useCallback(() => {
+    requirePassword(async () => {
+      if (!poem) return;
+      if (!title.trim()) { setError("请输入诗词标题"); return; }
+      if (!content.trim()) { setError("请输入诗词正文"); return; }
 
-    if (!title.trim()) {
-      setError("请输入诗词标题");
-      return;
-    }
-    if (!content.trim()) {
-      setError("请输入诗词正文");
-      return;
-    }
+      setSaving(true);
+      setError("");
 
-    setSaving(true);
-    setError("");
-
-    try {
-      await updatePoem(poem.id, {
-        title: title.trim(),
-        content: content.trim(),
-        season: selectedSeason,
-        solarTerm: selectedSolarTerm,
-        annotation: annotation.trim() || undefined,
-      });
-      setSaved(true);
-      setTimeout(() => {
-        router.push(`/poem/${poem.id}`);
-      }, 1200);
-    } catch (e) {
-      setError("保存失败，请重试");
-      console.error(e);
-    } finally {
-      setSaving(false);
-    }
-  }, [poem, title, content, annotation, selectedSeason, selectedSolarTerm, router]);
+      try {
+        await updatePoem(poem.id, {
+          title: title.trim(),
+          content: content.trim(),
+          season: selectedSeason,
+          solarTerm: selectedSolarTerm,
+          annotation: annotation.trim() || undefined,
+        });
+        setSaved(true);
+        setTimeout(() => router.push(`/poem/${poem.id}`), 1200);
+      } catch (e) {
+        setError("保存失败，请重试");
+        console.error(e);
+      } finally {
+        setSaving(false);
+      }
+    });
+  }, [requirePassword, poem, title, content, annotation, selectedSeason, selectedSolarTerm, router]);
 
   if (loading) {
     return (

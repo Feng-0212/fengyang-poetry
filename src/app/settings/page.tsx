@@ -216,7 +216,7 @@ export default function SettingsPage() {
         {/* 标题 */}
         <div className="text-center mb-12">
           <h1 className="font-[var(--font-mashan)] text-4xl text-ink-dark mb-2">
-            墨苑管理
+            墨韵阁
           </h1>
           <p className="text-ink-light text-sm">
             数据有归，墨迹长存
@@ -236,8 +236,8 @@ export default function SettingsPage() {
               unit="字"
             />
             <StatBox
-              label="节气分布"
-              value={new Set(poems.map((p) => p.solarTerm)).size}
+              label="藏分布"
+              value={new Set(poems.map((p) => p.collectionId)).size}
               unit="个"
             />
           </div>

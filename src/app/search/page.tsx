@@ -11,6 +11,7 @@ import Fuse from "fuse.js";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { getAllPoems, getAllCollections } from "@/lib/db";
+import { getAllPoems as getAllPoemsApi } from "@/lib/api";
 import { getSolarTermMeta, getSeasonName } from "@/lib/solarterms";
 import { cn } from "@/lib/utils";
 import type { Poem, Collection, SeasonKey } from "@/types/poem";
@@ -65,9 +66,9 @@ function SearchContent() {
   const [groupBy, setGroupBy] = useState<"collection" | "season" | "none">("collection");
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
-  // 加载数据
+  // 加载数据（诗从云端 API，与设置页同步）
   useEffect(() => {
-    getAllPoems().then(setAllPoems);
+    getAllPoemsApi().then((p) => setAllPoems(p as unknown as Poem[]));
     getAllCollections().then(setCollections);
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {

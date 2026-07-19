@@ -51,7 +51,7 @@ export default function CollectionWritePage({ params }: Props) {
     (st) => st.season === selectedSeason
   );
 
-  const handleSubmit = useCallback(async () => {
+  const doSave = useCallback(async () => {
     if (!title.trim()) { setError("请输入诗词标题"); return; }
     if (!content.trim()) { setError("请输入诗词正文"); return; }
     if (!collection) { setError("藏不存在"); return; }
@@ -77,6 +77,10 @@ export default function CollectionWritePage({ params }: Props) {
       setSaving(false);
     }
   }, [title, content, annotation, selectedSeason, selectedSolarTerm, collection, slug, router]);
+
+  const handleSubmit = useCallback(() => {
+    requirePassword(doSave);
+  }, [requirePassword, doSave]);
 
   if (colLoading) {
     return (

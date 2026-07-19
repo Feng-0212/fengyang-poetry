@@ -26,28 +26,24 @@ export function usePasswordGate() {
 }
 
 export function PasswordProvider({ children }: { children: ReactNode }) {
-  const [authenticated, setAuthenticated] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   const [error, setError] = useState("");
 
+  // 每次操作都要求输入密码（不缓存认证状态）
   const requirePassword = useCallback((action: () => void) => {
-    if (authenticated) {
-      action();
-    } else {
-      setPendingAction(() => action);
-      setShowPrompt(true);
-      setError("");
-    }
-  }, [authenticated]);
+    setPendingAction(() => action);
+    setShowPrompt(true);
+    setError("");
+  }, []);
 
   const verifyPassword = useCallback((pw: string) => {
     if (pw === PASSWORD) {
-      setAuthenticated(true);
       setShowPrompt(false);
-      if (pendingAction) {
-        setTimeout(() => pendingAction(), 100);
-        setPendingAction(null);
+      const act = pendingAction;
+      setPendingAction(null);
+      if (act) {
+        setTimeout(() => act(), 50);
       }
       return true;
     }
@@ -62,7 +58,7 @@ export function PasswordProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ authenticated, requirePassword }}>
+    <AuthContext.Provider value={{ authenticated: false, requirePassword }}>
       {children}
       <AnimatePresence>
         {showPrompt && (
