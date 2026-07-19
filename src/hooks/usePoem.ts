@@ -57,12 +57,15 @@ export function usePoems(collectionId?: string) {
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
+    if (!collectionId) {
+      setPoems([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const all = await getAllPoems();
-      const filtered = collectionId
-        ? all.filter((p) => p.collectionId === collectionId)
-        : all;
+      const filtered = all.filter((p) => p.collectionId === collectionId);
       setPoems(filtered);
       // 后台回写缓存
       cachePoems(all);
@@ -70,9 +73,7 @@ export function usePoems(collectionId?: string) {
       // 降级到 IndexedDB
       const all = await db.poems.toArray();
       const active = all.filter((p) => !p.deletedAt);
-      const filtered = collectionId
-        ? active.filter((p) => p.collectionId === collectionId)
-        : active;
+      const filtered = active.filter((p) => p.collectionId === collectionId);
       filtered.sort((a, b) => b.createdAt - a.createdAt);
       setPoems(filtered);
     }
