@@ -167,7 +167,7 @@ export default function PoemDetailPage({ params }: Props) {
               <button
                 onClick={handleToggleFavorite}
                 className={cn(
-                  "w-9 h-9 rounded-full flex items-center justify-center transition-all",
+                  "rounded-full flex items-center gap-1.5 px-3 py-1.5 transition-all text-sm",
                   poem.isFavorite
                     ? "bg-cinnabar/10 text-cinnabar"
                     : "bg-ink/5 text-ink-light hover:bg-ink/10"
@@ -175,6 +175,9 @@ export default function PoemDetailPage({ params }: Props) {
                 title={poem.isFavorite ? "取消收藏" : "收藏"}
               >
                 <span className="text-sm">♥</span>
+                {poem.favoriteCount > 0 && (
+                  <span className="text-xs font-medium">{poem.favoriteCount}</span>
+                )}
               </button>
               <button
                 onClick={handleDelete}

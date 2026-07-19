@@ -67,6 +67,7 @@ export default function CollectionWritePage({ params }: Props) {
         solarTerm: selectedSolarTerm as any,
         annotation: annotation.trim() || undefined,
         isFavorite: false,
+        favoriteCount: 0,
       });
       setSaved(true);
       setTimeout(() => router.push(`/yuan/${slug}`), 1500);

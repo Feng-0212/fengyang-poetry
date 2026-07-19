@@ -71,6 +71,7 @@ export async function POST(req: Request) {
       solarTerm: body.solarTerm || "",
       annotation: body.annotation || undefined,
       isFavorite: false,
+      favoriteCount: 0,
       createdAt: now,
       updatedAt: now,
     };

@@ -54,6 +54,7 @@ export interface Poem {
   season: SeasonKey;
   solarTerm: SolarTermKey;
   isFavorite: boolean;
+  favoriteCount: number; // 收藏计数（0 = 未收藏，>=1 = 已收藏且记录收藏人数）
   createdAt: number;
   updatedAt: number;
   deletedAt?: number; // 回收站

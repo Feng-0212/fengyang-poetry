@@ -149,6 +149,7 @@ export default function SettingsPage() {
           solarTerm: p.solarTerm || "lichun",
           annotation: p.annotation,
           isFavorite: !!p.isFavorite,
+          favoriteCount: p.isFavorite ? 1 : 0,
         });
         count++;
       }
@@ -194,6 +195,7 @@ export default function SettingsPage() {
             season: s.season as any,
             solarTerm: s.solarTerm as any,
             isFavorite: false,
+            favoriteCount: 0,
           });
           count++;
         }

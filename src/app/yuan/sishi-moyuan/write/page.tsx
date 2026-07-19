@@ -61,6 +61,7 @@ export default function WritePage() {
         solarTerm: selectedSolarTerm as any,
         annotation: annotation.trim() || undefined,
         isFavorite: false,
+        favoriteCount: 0,
       });
       setSaved(true);
       setTimeout(() => router.push("/yuan/sishi-moyuan"), 1500);

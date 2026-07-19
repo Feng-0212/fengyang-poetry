@@ -85,7 +85,12 @@ export async function deletePoem(id: string): Promise<void> {
 export async function toggleFavorite(id: string): Promise<void> {
   const poem = await getPoem(id);
   if (poem) {
-    await updatePoem(id, { isFavorite: !poem.isFavorite });
+    await updatePoem(id, {
+      isFavorite: !poem.isFavorite,
+      favoriteCount: poem.isFavorite
+        ? Math.max(0, (poem.favoriteCount || 1) - 1)
+        : (poem.favoriteCount || 0) + 1,
+    });
   }
 }
 

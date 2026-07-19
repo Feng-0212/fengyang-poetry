@@ -80,7 +80,12 @@ export default function PoemCard({ poem, index = 0, collection }: Props) {
 
             <div className="flex flex-col items-end gap-1">
               {poem.isFavorite && (
-                <span className="text-cinnabar text-xs">♥</span>
+                <span className="text-cinnabar text-xs flex items-center gap-0.5">
+                  <span>♥</span>
+                  {poem.favoriteCount > 1 && (
+                    <span>{poem.favoriteCount}</span>
+                  )}
+                </span>
               )}
               <span className="text-xs text-ink-light">
                 {formatRelativeTime(poem.createdAt)}
