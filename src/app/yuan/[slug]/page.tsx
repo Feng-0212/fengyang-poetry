@@ -16,6 +16,9 @@ import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/utils";
 import { getSolarTermMeta, getSeasonName } from "@/lib/solarterms";
 import type { Poem, Collection } from "@/types/poem";
+import { usePasswordGate } from "@/components/auth/PasswordGate";
+import { deleteCollection } from "@/lib/db";
+import { deleteCollectionApi } from "@/lib/api";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -70,6 +73,24 @@ export default function CollectionPage({ params }: Props) {
   }
 
   const layout = collection.layout || "classic";
+  const { requirePassword } = usePasswordGate();
+
+  const handleDeleteCollection = async () => {
+    if (!collection) return;
+    requirePassword(async () => {
+      if (!confirm(`确定要删除「${collection.name}」及其中所有诗词吗？此操作不可撤销。`)) return;
+      try {
+        await Promise.all([
+          deleteCollectionApi(collection.id),
+          deleteCollection(collection.id),
+        ]);
+        router.push("/");
+      } catch (e) {
+        console.error("删除藏失败", e);
+        alert("删除失败，请重试");
+      }
+    });
+  };
 
   return (
     <div className="paper-texture min-h-screen flex flex-col">
@@ -133,6 +154,17 @@ export default function CollectionPage({ params }: Props) {
                     </svg>
                     落笔
                   </Link>
+                  {!collection.isSystem && (
+                    <button
+                      onClick={handleDeleteCollection}
+                      className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm text-red-400 border border-red-200 hover:bg-red-50 transition-all"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      删除
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

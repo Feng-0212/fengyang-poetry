@@ -88,3 +88,8 @@ export async function toggleFavorite(id: string): Promise<void> {
     await updatePoem(id, { isFavorite: !poem.isFavorite });
   }
 }
+
+/** 删除藏（云端删除该藏下所有诗词） */
+export async function deleteCollectionApi(id: string): Promise<void> {
+  await apiFetch(`/collection/${id}`, { method: "DELETE" });
+}
