@@ -2,7 +2,7 @@
 // API: 藏操作（DELETE 整个藏及其诗词）
 // ============================================================
 import { NextResponse } from "next/server";
-import type { Poem } from "@/types/poem";
+import type { Poem, Collection } from "@/types/poem";
 
 async function getKv() {
   try {
@@ -17,6 +17,7 @@ async function getKv() {
 }
 
 const KV_KEY = "poems:all";
+const COLLECTIONS_KEY = "collections:all";
 
 async function getPoems(): Promise<Poem[]> {
   const kv = await getKv();
@@ -34,15 +35,36 @@ async function setPoems(poems: Poem[]): Promise<void> {
   else (globalThis as any).__poems = poems;
 }
 
+async function getCollections(): Promise<Collection[]> {
+  const kv = await getKv();
+  if (kv) {
+    const data = await kv.get<Collection[]>(COLLECTIONS_KEY);
+    return data || [];
+  }
+  return [];
+}
+
+async function setCollections(cols: Collection[]): Promise<void> {
+  const kv = await getKv();
+  if (kv) await kv.set(COLLECTIONS_KEY, cols);
+}
+
 export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  // 删除该藏下所有诗词
   let poems = await getPoems();
   const before = poems.length;
   poems = poems.filter((p) => p.collectionId !== id);
   const deleted = before - poems.length;
   await setPoems(poems);
-  return NextResponse.json({ ok: true, deleted });
+
+  // 删除藏本身
+  const cols = await getCollections();
+  const newCols = cols.filter((c) => c.id !== id);
+  await setCollections(newCols);
+
+  return NextResponse.json({ ok: true, deleted, removedCollection: newCols.length !== cols.length });
 }

@@ -4,7 +4,7 @@
 import Dexie, { type Table } from "dexie";
 import type { Poem, Collection } from "@/types/poem";
 import { COLLECTION_IDS } from "@/types/poem";
-import { getCollectionsApi, addCollectionApi } from "./api";
+import { getCollectionsApi, addCollectionApi, deleteCollectionApi } from "./api";
 
 class PoetryDB extends Dexie {
   poems!: Table<Poem, string>;
@@ -298,6 +298,12 @@ export async function deleteCollection(id: string): Promise<void> {
     await db.poems.bulkDelete(poems.map((p) => p.id));
     await db.collections.delete(id);
   });
+  // 同步删除云端
+  try {
+    await deleteCollectionApi(id);
+  } catch {
+    // 云端删除失败不影响本地
+  }
 }
 
 async function updateCollectionCount(collectionId: string): Promise<void> {
