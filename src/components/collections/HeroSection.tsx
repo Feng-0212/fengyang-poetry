@@ -97,7 +97,6 @@ export default function HeroSection() {
               color: "white",
             }}
           >
-            <span>墨</span>
             <span>进入四时墨苑</span>
             <svg
               className="w-4 h-4"
