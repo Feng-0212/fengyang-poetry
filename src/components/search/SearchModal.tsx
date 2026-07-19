@@ -109,7 +109,7 @@ export default function SearchModal({ open, onClose }: Props) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-ink/40 backdrop-blur-sm z-200"
+            className="fixed inset-0 bg-ink/40 backdrop-blur-sm z-[9997]"
           />
 
           {/* 搜索框 */}
@@ -118,7 +118,7 @@ export default function SearchModal({ open, onClose }: Props) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -20 }}
             transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-            className="fixed top-20 left-1/2 -translate-x-1/2 w-full max-w-2xl z-201 px-4"
+            className="fixed top-20 left-1/2 -translate-x-1/2 w-full max-w-2xl z-[9998] px-4"
           >
             <div
               className="rounded-2xl overflow-hidden"
@@ -153,12 +153,13 @@ export default function SearchModal({ open, onClose }: Props) {
                   className="flex-1 bg-transparent border-none outline-none text-base text-ink-dark placeholder:text-ink-light/50"
                   style={{ fontFamily: "var(--font-lxgw)" }}
                 />
-                <kbd
-                  className="hidden md:inline-flex text-xs text-ink-light px-2 py-0.5 rounded border border-ink/10"
-                  style={{ fontFamily: "monospace" }}
+                <button
+                  onClick={onClose}
+                  className="text-xs text-ink-light px-2 py-0.5 rounded border border-ink/10 hover:bg-ink/5 transition-colors cursor-pointer"
+                  title="关闭搜索"
                 >
                   ESC
-                </kbd>
+                </button>
               </div>
 
               {/* 搜索结果 */}

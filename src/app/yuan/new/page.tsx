@@ -148,7 +148,14 @@ export default function NewCollectionPage() {
               <div className="flex flex-wrap gap-2">
                 {PRESET_GLYPHS.map((g) => (
                   <button key={g} onClick={() => setGlyph(g)}
-                    className={cn("w-9 h-9 rounded-lg text-lg flex items-center justify-center border transition-all", glyph === g ? "border-current bg-ink/5" : "border-ink/10 hover:border-ink/20")} />
+                    className={cn(
+                      "w-9 h-9 rounded-lg border transition-all flex items-center justify-center",
+                      glyph === g ? "border-current bg-ink/5" : "border-ink/10 hover:border-ink/20"
+                    )}
+                    style={{ fontSize: "18px", lineHeight: 1 }}
+                  >
+                    <span style={{ display: "inline", fontFamily: "inherit" }}>{g}</span>
+                  </button>
                 ))}
               </div>
             </div>
