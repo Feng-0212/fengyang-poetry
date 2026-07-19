@@ -50,35 +50,13 @@ export function usePoem(id: string) {
 }
 
 /**
- * 获取诗词列表（API 优先，IndexedDB 降级）
+ * 获取诗词列表（按藏过滤，API 优先，IndexedDB 降级）
  */
-export function usePoems(collectionId?: string) {
+export function usePoems(collectionId: string) {
   const [poems, setPoems] = useState<Poem[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    // collectionId 为 undefined/null → 查全部
-    if (collectionId === undefined || collectionId === null) {
-      setLoading(true);
-      try {
-        const all = await getAllPoems();
-        setPoems(all);
-        cachePoems(all);
-      } catch {
-        const all = await db.poems.toArray().then((a) => a.filter((p) => !p.deletedAt));
-        all.sort((a, b) => b.createdAt - a.createdAt);
-        setPoems(all);
-      }
-      setLoading(false);
-      return;
-    }
-    // collectionId 为空字符串 → 等待（不发请求），由 useEffect 监听变化
-    if (collectionId === "") {
-      setPoems([]);
-      setLoading(false);
-      return;
-    }
-    // 有 collectionId → 精确查询
     setLoading(true);
     try {
       const all = await getAllPoems();
@@ -94,6 +72,32 @@ export function usePoems(collectionId?: string) {
     }
     setLoading(false);
   }, [collectionId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  return { poems, loading, refresh: load };
+}
+
+/**
+ * 获取全部诗词（不按藏过滤）
+ */
+export function useAllPoems() {
+  const [poems, setPoems] = useState<Poem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const all = await getAllPoems();
+      setPoems(all);
+      cachePoems(all);
+    } catch {
+      const all = await db.poems.toArray().then((a) => a.filter((p) => !p.deletedAt));
+      all.sort((a, b) => b.createdAt - a.createdAt);
+      setPoems(all);
+    }
+    setLoading(false);
+  }, []);
 
   useEffect(() => { load(); }, [load]);
 

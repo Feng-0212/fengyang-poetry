@@ -47,7 +47,7 @@ export default function SishiMoyuanPage() {
     });
   }, []);
 
-  const { poems, loading } = usePoems(colId);
+  const { poems, loading } = usePoems(colId ?? "");
   const { poems: springPoems } = useSeasonPoems("spring", colId);
   const { poems: summerPoems } = useSeasonPoems("summer", colId);
   const { poems: autumnPoems } = useSeasonPoems("autumn", colId);

@@ -7,7 +7,7 @@ import { useState, useRef } from "react";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { usePoems } from "@/hooks/usePoem";
+import { useAllPoems } from "@/hooks/usePoem";
 import { useSolarTerm } from "@/hooks/useSolarTerm";
 import { exportAllData, importData, getAllCollections } from "@/lib/db";
 import { addPoem as addPoemApi, getAllPoems } from "@/lib/api";
@@ -18,7 +18,7 @@ import { usePasswordGate } from "@/components/auth/PasswordGate";
 
 export default function SettingsPage() {
   const solarTerm = useSolarTerm();
-  const { poems, refresh } = usePoems();
+  const { poems, refresh } = useAllPoems();
   const { requirePassword } = usePasswordGate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 

@@ -34,7 +34,7 @@ export default function BookmarksPage() {
       if (c) setColId(c.id);
     });
   }, []);
-  const { poems } = usePoems(colId);
+  const { poems } = usePoems(colId ?? "");
   const [selectedPoem, setSelectedPoem] = useState<Poem | null>(null);
   const [size, setSize] = useState<WallpaperOptions["size"]>("mobile");
   const [style, setStyle] = useState<WallpaperOptions["style"]>("ink");

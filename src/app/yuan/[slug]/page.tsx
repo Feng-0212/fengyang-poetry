@@ -28,7 +28,7 @@ export default function CollectionPage({ params }: Props) {
   const { slug } = use(params);
   const router = useRouter();
   const { collection, loading: colLoading } = useCollection(slug);
-  const { poems, loading: poemsLoading } = usePoems(collection?.id);
+  const { poems, loading: poemsLoading } = usePoems(collection?.id ?? "");
 
   if (colLoading) {
     return (
