@@ -38,6 +38,8 @@ export default function CollectionWritePage({ params }: Props) {
   const showSeasonFields = slug === "sishi-moyuan";
 
   const [title, setTitle] = useState("");
+  const [author, setAuthor] = useState("");
+  const [dynasty, setDynasty] = useState("");
   const [content, setContent] = useState("");
   const [annotation, setAnnotation] = useState("");
   const [selectedSeason, setSelectedSeason] = useState<SeasonKey>(solarTerm.season);
@@ -66,6 +68,8 @@ export default function CollectionWritePage({ params }: Props) {
         season: selectedSeason,
         solarTerm: selectedSolarTerm as any,
         annotation: annotation.trim() || undefined,
+        author: author.trim() || "佚名",
+        dynasty: dynasty.trim() || "佚名",
         isFavorite: false,
         favoriteCount: 0,
       });
@@ -151,7 +155,7 @@ export default function CollectionWritePage({ params }: Props) {
               </div>
             </motion.div>
 
-            <div className="mb-8">
+            <div className="mb-4">
               <input
                 type="text"
                 value={title}
@@ -164,6 +168,16 @@ export default function CollectionWritePage({ params }: Props) {
                 className="h-px mt-4"
                 style={{ background: `linear-gradient(to right, transparent, ${collection.color}40, transparent)` }}
               />
+            </div>
+
+            {/* 作者与朝代 */}
+            <div className="flex gap-4 mb-6">
+              <input type="text" value={author} onChange={(e) => setAuthor(e.target.value)}
+                placeholder="作者（选填）"
+                className="flex-1 text-center text-sm text-ink-light bg-transparent border-none outline-none placeholder:text-ink-light/30" />
+              <input type="text" value={dynasty} onChange={(e) => setDynasty(e.target.value)}
+                placeholder="朝代（选填）"
+                className="flex-1 text-center text-sm text-ink-light bg-transparent border-none outline-none placeholder:text-ink-light/30" />
             </div>
 
             <div className="mb-8">

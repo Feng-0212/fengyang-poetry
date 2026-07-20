@@ -66,6 +66,8 @@ export async function POST(req: Request) {
       id,
       collectionId: body.collectionId,
       title: body.title,
+      author: body.author || "佚名",
+      dynasty: body.dynasty || "佚名",
       content: body.content,
       season: body.season || "",
       solarTerm: body.solarTerm || "",

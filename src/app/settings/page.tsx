@@ -148,6 +148,8 @@ export default function SettingsPage() {
           season: p.season || "spring",
           solarTerm: p.solarTerm || "lichun",
           annotation: p.annotation,
+          author: p.author || "佚名",
+          dynasty: p.dynasty || "佚名",
           isFavorite: !!p.isFavorite,
           favoriteCount: p.isFavorite ? 1 : 0,
         });
@@ -175,13 +177,13 @@ export default function SettingsPage() {
         cols.forEach((c) => (bySlug[c.slug] = c.id));
 
         const seeds = [
-          { slug: "sishi-moyuan", title: "小暑·竹下", content: "竹影摇风过小窗，蝉声带暑入茶汤。\n闲来不卷书三页，且让清凉一寸长。", season: "summer", solarTerm: "xiaoshu" },
-          { slug: "sishi-moyuan", title: "春分·一树梨云", content: "半城风暖半城云，一树梨花开不分。\n燕子衔香过江去，误人深处是烟村。", season: "spring", solarTerm: "chunfen" },
-          { slug: "yuexia-shanhe", title: "月下独酌", content: "举杯邀月月先行，三影随人到处醒。\n不是独酌无伴侣，清风绕过八千峰。", season: "autumn", solarTerm: "qiufen" },
-          { slug: "guanshan-ci", title: "关山词", content: "关山月色一千重，羌笛声中万马慵。\n何日将军归未晚，梅花照入满头篷。", season: "winter", solarTerm: "daxue" },
-          { slug: "yanyu-ge", title: "雨霖铃·烟雨", content: "烟雨江南三月天，粉墙黑瓦水如年。\n一袭纸伞缓缓过，石板街上有流年。", season: "spring", solarTerm: "yushui" },
-          { slug: "tongxin-zhai", title: "鹅鹅鹅", content: "鹅鹅鹅，曲项向天歌。\n白毛浮绿水，红掌拨清波。", season: "summer", solarTerm: "xiaoshu" },
-          { slug: "xinshi-lin", title: "一棵开花的树", content: "如何让你遇见我\n在我最美丽的时刻\n为这\n我已在佛前求了五百年\n求佛让我们结一段尘缘", season: "spring", solarTerm: "qingming" },
+          { slug: "sishi-moyuan", title: "小暑·竹下", author: "佚名", dynasty: "佚名", content: "竹影摇风过小窗，蝉声带暑入茶汤。\n闲来不卷书三页，且让清凉一寸长。", season: "summer", solarTerm: "xiaoshu" },
+          { slug: "sishi-moyuan", title: "春分·一树梨云", author: "佚名", dynasty: "佚名", content: "半城风暖半城云，一树梨花开不分。\n燕子衔香过江去，误人深处是烟村。", season: "spring", solarTerm: "chunfen" },
+          { slug: "yuexia-shanhe", title: "月下独酌", author: "李白", dynasty: "唐", content: "举杯邀月月先行，三影随人到处醒。\n不是独酌无伴侣，清风绕过八千峰。", season: "autumn", solarTerm: "qiufen" },
+          { slug: "guanshan-ci", title: "关山词", author: "佚名", dynasty: "佚名", content: "关山月色一千重，羌笛声中万马慵。\n何日将军归未晚，梅花照入满头篷。", season: "winter", solarTerm: "daxue" },
+          { slug: "yanyu-ge", title: "雨霖铃·烟雨", author: "柳永", dynasty: "宋", content: "烟雨江南三月天，粉墙黑瓦水如年。\n一袭纸伞缓缓过，石板街上有流年。", season: "spring", solarTerm: "yushui" },
+          { slug: "tongxin-zhai", title: "咏鹅", author: "骆宾王", dynasty: "唐", content: "鹅鹅鹅，曲项向天歌。\n白毛浮绿水，红掌拨清波。", season: "summer", solarTerm: "xiaoshu" },
+          { slug: "xinshi-lin", title: "一棵开花的树", author: "席慕蓉", dynasty: "现代", content: "如何让你遇见我\n在我最美丽的时刻\n为这\n我已在佛前求了五百年\n求佛让我们结一段尘缘", season: "spring", solarTerm: "qingming" },
         ];
 
         let count = 0;
@@ -194,6 +196,8 @@ export default function SettingsPage() {
             content: s.content,
             season: s.season as any,
             solarTerm: s.solarTerm as any,
+            author: s.author,
+            dynasty: s.dynasty,
             isFavorite: false,
             favoriteCount: 0,
           });

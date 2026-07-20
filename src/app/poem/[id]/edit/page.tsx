@@ -50,6 +50,8 @@ export default function EditPoemPage({ params }: Props) {
   const themeColor = collection?.color || solarTermHook.color;
 
   const [title, setTitle] = useState("");
+  const [author, setAuthor] = useState("");
+  const [dynasty, setDynasty] = useState("");
   const [content, setContent] = useState("");
   const [annotation, setAnnotation] = useState("");
   const [selectedSeason, setSelectedSeason] = useState<SeasonKey>("spring");
@@ -65,6 +67,8 @@ export default function EditPoemPage({ params }: Props) {
   useEffect(() => {
     if (poem) {
       setTitle(poem.title);
+      setAuthor(poem.author || "");
+      setDynasty(poem.dynasty || "");
       setContent(poem.content);
       setAnnotation(poem.annotation || "");
       setSelectedSeason(poem.season);
@@ -77,6 +81,8 @@ export default function EditPoemPage({ params }: Props) {
     if (!poem) return;
     const changed =
       title !== poem.title ||
+      author !== (poem.author || "") ||
+      dynasty !== (poem.dynasty || "") ||
       content !== poem.content ||
       (annotation || "") !== (poem.annotation || "") ||
       selectedSeason !== poem.season ||
@@ -103,6 +109,8 @@ export default function EditPoemPage({ params }: Props) {
       try {
         await updatePoem(poem.id, {
           title: title.trim(),
+          author: author.trim() || "佚名",
+          dynasty: dynasty.trim() || "佚名",
           content: content.trim(),
           season: selectedSeason,
           solarTerm: selectedSolarTerm,
@@ -196,7 +204,7 @@ export default function EditPoemPage({ params }: Props) {
             )}
 
             {/* 标题输入 */}
-            <div className="mb-8">
+            <div className="mb-4">
               <input
                 type="text"
                 value={title}
@@ -211,6 +219,16 @@ export default function EditPoemPage({ params }: Props) {
                   background: `linear-gradient(to right, transparent, ${displayTerm.color}40, transparent)`,
                 }}
               />
+            </div>
+
+            {/* 作者与朝代 */}
+            <div className="flex gap-4 mb-6">
+              <input type="text" value={author} onChange={(e) => setAuthor(e.target.value)}
+                placeholder="作者（选填）"
+                className="flex-1 text-center text-sm text-ink-light bg-transparent border-none outline-none placeholder:text-ink-light/30" />
+              <input type="text" value={dynasty} onChange={(e) => setDynasty(e.target.value)}
+                placeholder="朝代（选填）"
+                className="flex-1 text-center text-sm text-ink-light bg-transparent border-none outline-none placeholder:text-ink-light/30" />
             </div>
 
             {/* 正文输入 */}

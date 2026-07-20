@@ -49,6 +49,8 @@ export interface Poem {
   id: string;
   collectionId: string; // 所属藏
   title: string;
+  author: string; // 作者，未填默认「佚名」
+  dynasty: string; // 朝代，未填默认「佚名」
   content: string;
   annotation?: string;
   season: SeasonKey;

@@ -31,6 +31,8 @@ export default function WritePage() {
   const { requirePassword } = usePasswordGate();
 
   const [title, setTitle] = useState("");
+  const [author, setAuthor] = useState("");
+  const [dynasty, setDynasty] = useState("");
   const [content, setContent] = useState("");
   const [annotation, setAnnotation] = useState("");
   const [selectedSeason, setSelectedSeason] = useState<SeasonKey>(solarTerm.season);
@@ -60,6 +62,8 @@ export default function WritePage() {
         season: selectedSeason,
         solarTerm: selectedSolarTerm as any,
         annotation: annotation.trim() || undefined,
+        author: author.trim() || "佚名",
+        dynasty: dynasty.trim() || "佚名",
         isFavorite: false,
         favoriteCount: 0,
       });
@@ -112,12 +116,22 @@ export default function WritePage() {
               </div>
             </motion.div>
 
-            <div className="mb-8">
+            <div className="mb-4">
               <input type="text" value={title} onChange={(e) => setTitle(e.target.value)}
                 placeholder="诗词标题"
                 className="w-full text-center font-[var(--font-mashan)] text-3xl text-ink-dark bg-transparent border-none outline-none placeholder:text-ink-light/30"
                 style={{ fontFamily: "var(--font-mashan)" }} />
               <div className="h-px mt-4" style={{ background: `linear-gradient(to right, transparent, ${displayTerm.color}40, transparent)` }} />
+            </div>
+
+            {/* 作者与朝代 */}
+            <div className="flex gap-4 mb-6">
+              <input type="text" value={author} onChange={(e) => setAuthor(e.target.value)}
+                placeholder="作者（选填）"
+                className="flex-1 text-center text-sm text-ink-light bg-transparent border-none outline-none placeholder:text-ink-light/30" />
+              <input type="text" value={dynasty} onChange={(e) => setDynasty(e.target.value)}
+                placeholder="朝代（选填）"
+                className="flex-1 text-center text-sm text-ink-light bg-transparent border-none outline-none placeholder:text-ink-light/30" />
             </div>
 
             <div className="mb-8">

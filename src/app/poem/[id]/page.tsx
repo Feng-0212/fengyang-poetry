@@ -255,6 +255,15 @@ export default function PoemDetailPage({ params }: Props) {
                   />
                 </h1>
 
+                {/* 作者与朝代 */}
+                {(poem.author || poem.dynasty) && (
+                  <div className="text-center mb-6 text-sm text-ink-light/70">
+                    <span>{poem.author || "佚名"}</span>
+                    {(poem.author || poem.dynasty) && <span> · </span>}
+                    <span>{poem.dynasty || "佚名"}</span>
+                  </div>
+                )}
+
                 {/* 朗读按钮 */}
                 <motion.div
                   className="flex justify-center mb-10"
@@ -262,7 +271,7 @@ export default function PoemDetailPage({ params }: Props) {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 1.5 }}
                 >
-                  <TtsButton text={`${poem.title}。${poem.content}`} color={sealColor} />
+                  <TtsButton text={`${poem.title}。${poem.author ? poem.author + "·" : ""}${poem.content}`} color={sealColor} />
                 </motion.div>
 
                 {/* 装饰线 */}
