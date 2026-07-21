@@ -126,7 +126,7 @@ export default function EditPoemPage({ params }: Props) {
         setSaving(false);
       }
     });
-  }, [requirePassword, poem, title, content, annotation, selectedSeason, selectedSolarTerm, router]);
+  }, [requirePassword, poem, title, author, dynasty, content, annotation, selectedSeason, selectedSolarTerm, router]);
 
   if (loading) {
     return (

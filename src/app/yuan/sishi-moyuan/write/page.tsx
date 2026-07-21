@@ -75,7 +75,7 @@ export default function WritePage() {
     } finally {
       setSaving(false);
     }
-  }, [title, content, annotation, selectedSeason, selectedSolarTerm, router]);
+  }, [title, author, dynasty, content, annotation, selectedSeason, selectedSolarTerm, router]);
 
   return (
     <div className="paper-texture min-h-screen">

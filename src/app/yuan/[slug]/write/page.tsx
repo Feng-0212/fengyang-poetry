@@ -81,7 +81,7 @@ export default function CollectionWritePage({ params }: Props) {
     } finally {
       setSaving(false);
     }
-  }, [title, content, annotation, selectedSeason, selectedSolarTerm, collection, slug, router]);
+  }, [title, author, dynasty, content, annotation, selectedSeason, selectedSolarTerm, collection, slug, router]);
 
   const handleSubmit = useCallback(() => {
     requirePassword(doSave);
