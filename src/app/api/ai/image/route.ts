@@ -94,7 +94,19 @@ async function buildDrawingPrompt(
     throw new Error(`提示词生成失败 (${resp.status}) ${t.slice(0, 200)}`);
   }
   const data = await resp.json();
-  const raw: string = data?.choices?.[0]?.message?.content?.trim() || "";
+  const msg = data?.choices?.[0]?.message || {};
+  const pick = (v: unknown): string =>
+    typeof v === "string"
+      ? v.trim()
+      : Array.isArray(v)
+      ? v.map((p) => (typeof p === "string" ? p : p?.text || "")).join("").trim()
+      : "";
+  const raw: string =
+    pick(msg.content) ||
+    pick(msg.reasoning_content) ||
+    pick(msg.reasoning) ||
+    pick(msg?.provider_specific_fields?.reasoning) ||
+    "";
 
   // 解析 JSON（容忍代码块包裹）
   let promptEn = "";

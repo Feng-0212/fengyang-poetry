@@ -7,6 +7,33 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
+// 从各种可能的返回结构中提取文本（兼容 content 为数组、reasoning 模型把正文放进 reasoning 字段等情况）
+function extractText(data: unknown): string {
+  const msg = (data as { choices?: { message?: Record<string, unknown> }[] })
+    ?.choices?.[0]?.message;
+  if (!msg) return "";
+  const pick = (v: unknown): string => {
+    if (!v) return "";
+    if (typeof v === "string") return v.trim();
+    if (Array.isArray(v))
+      return v
+        .map((p) =>
+          typeof p === "string" ? p : (p as { text?: string })?.text || ""
+        )
+        .join("")
+        .trim();
+    return "";
+  };
+  const psf = msg.provider_specific_fields as Record<string, unknown> | undefined;
+  return (
+    pick(msg.content) ||
+    pick(msg.reasoning_content) ||
+    pick(msg.reasoning) ||
+    pick(psf?.reasoning) ||
+    ""
+  );
+}
+
 function resolveConfig(req: Request) {
   const h = req.headers;
   const key =
@@ -66,7 +93,7 @@ export async function POST(req: Request) {
 ${author ? `作者：${author}${dynasty ? "（" + dynasty + "）" : ""}\n` : ""}正文：
 ${content}`;
 
-  try {
+  const callModel = async () => {
     const resp = await fetch(`${baseUrl}/chat/completions`, {
       method: "POST",
       headers: {
@@ -79,15 +106,19 @@ ${content}`;
           {
             role: "system",
             content:
-              "你是一位学养深厚的古典诗词鉴赏家，文笔典雅，善于点出诗中意境与妙处。",
+              "你是一位学养深厚的古典诗词鉴赏家，文笔典雅，善于点出诗中意境与妙处。请直接在正文(content)中输出赏析，不要只在思考过程里回答。",
           },
           { role: "user", content: prompt },
         ],
         temperature: 0.8,
-        max_tokens: 800,
+        max_tokens: 1200,
       }),
     });
+    return resp;
+  };
 
+  try {
+    let resp = await callModel();
     if (!resp.ok) {
       const errText = await resp.text().catch(() => "");
       return NextResponse.json(
@@ -95,12 +126,24 @@ ${content}`;
         { status: 502 }
       );
     }
+    let data = await resp.json();
+    let text = extractText(data);
 
-    const data = await resp.json();
-    const text: string =
-      data?.choices?.[0]?.message?.content?.trim() || "";
+    // 若正文为空，自动重试一次
     if (!text) {
-      return NextResponse.json({ error: "模型返回为空" }, { status: 502 });
+      resp = await callModel();
+      if (resp.ok) {
+        data = await resp.json();
+        text = extractText(data);
+      }
+    }
+
+    if (!text) {
+      const snippet = JSON.stringify(data?.choices?.[0]?.message || {}).slice(0, 300);
+      return NextResponse.json(
+        { error: "模型返回为空，请重试", detail: snippet },
+        { status: 502 }
+      );
     }
     return NextResponse.json({ commentary: text });
   } catch (e) {
