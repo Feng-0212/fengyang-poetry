@@ -11,7 +11,7 @@ export default function Footer() {
   const seasonName = getSeasonName(solarTerm.season);
 
   return (
-    <footer className="mt-24 py-12 border-t border-ink/10">
+    <footer className="mt-24 py-12 pb-safe border-t border-ink/10">
       <div className="max-w-6xl mx-auto px-6 text-center">
         {/* 节气印章 */}
         <div

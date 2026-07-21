@@ -23,7 +23,7 @@ export default function Navbar() {
   const { openSearch } = useSearch();
 
   return (
-    <nav className="navbar">
+    <nav className="navbar pt-safe">
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3 group flex-shrink-0">

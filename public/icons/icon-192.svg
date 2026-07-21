@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="24" fill="#C14A3F"/>
+  <rect x="24" y="24" width="144" height="144" rx="12" fill="#F5F0E8" opacity="0.15"/>
+  <text x="96" y="120" text-anchor="middle" font-size="96" fill="white" font-family="serif" font-weight="bold">墨</text>
+</svg>
