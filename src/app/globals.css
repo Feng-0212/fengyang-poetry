@@ -2,8 +2,7 @@
    四时墨苑 - 全局样式
    ============================================================ */
 
-/* Google Fonts 加载 */
-@import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;400;500;600;700&display=swap');
+/* Google Fonts 改由 layout.tsx <head> 的 <link> 加载，避免 @import 阻塞 CSS 解析 */
 
 @tailwind base;
 @tailwind components;

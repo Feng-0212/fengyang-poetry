@@ -157,7 +157,7 @@ export default function BookmarksPage() {
             <div className="mb-6">
               <label className="text-xs text-ink-light mb-2 block">预览</label>
               <div className="relative rounded-lg overflow-hidden border border-ink/10 bg-white/50 aspect-[9/19.5] flex items-center justify-center">
-                {preview ? <img src={preview} alt="壁纸预览" className="w-full h-full object-cover" /> :
+                {preview ? <img src={preview} alt="壁纸预览" loading="lazy" decoding="async" className="w-full h-full object-cover" /> :
                   selectedPoem ? <div className="text-center text-ink-light/50 text-sm"><div className="text-4xl mb-2">📜</div>点击下方按钮生成预览</div> :
                     <div className="text-center text-ink-light/40 text-sm"><div className="text-4xl mb-2">⏳</div>先选择一首诗词</div>}
               </div>

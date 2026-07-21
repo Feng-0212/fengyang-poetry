@@ -188,6 +188,8 @@ export default function AiPanel({
               <img
                 src={draftImg}
                 alt={poem.title}
+                loading="lazy"
+                decoding="async"
                 className="w-full aspect-square object-cover"
               />
               <div className="p-4">
