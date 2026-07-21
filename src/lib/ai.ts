@@ -52,7 +52,8 @@ function buildHeaders(kind: "text" | "image"): Record<string, string> {
   const h: Record<string, string> = { "Content-Type": "application/json" };
   if (cfg.apiKey.trim()) h["x-ai-key"] = cfg.apiKey.trim();
   if (cfg.baseUrl.trim()) h["x-ai-base-url"] = cfg.baseUrl.trim();
-  if (kind === "text" && cfg.textModel.trim()) h["x-ai-model"] = cfg.textModel.trim();
+  // 文本模型：赏析与「图像提示词生成」都会用到
+  if (cfg.textModel.trim()) h["x-ai-model"] = cfg.textModel.trim();
   if (kind === "image" && cfg.imageModel.trim())
     h["x-ai-image-model"] = cfg.imageModel.trim();
   return h;
@@ -84,8 +85,14 @@ export async function generateCommentary(poem: Poem): Promise<string> {
   return data.commentary as string;
 }
 
-/** 生成 AI 配图，返回图片 URL 或 dataURL */
-export async function generateImage(poem: Poem): Promise<string> {
+export interface ImageResult {
+  image: string;
+  promptEn?: string;
+  promptZh?: string;
+}
+
+/** 生成 AI 配图：先生成绘画提示词，再据提示词生图 */
+export async function generateImage(poem: Poem): Promise<ImageResult> {
   const res = await fetch("/api/ai/image", {
     method: "POST",
     headers: buildHeaders("image"),
@@ -98,5 +105,9 @@ export async function generateImage(poem: Poem): Promise<string> {
   });
   if (!res.ok) throw new Error(await parseError(res));
   const data = await res.json();
-  return data.image as string;
+  return {
+    image: data.image as string,
+    promptEn: data.promptEn as string | undefined,
+    promptZh: data.promptZh as string | undefined,
+  };
 }

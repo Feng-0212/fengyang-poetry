@@ -30,6 +30,7 @@ export default function AiPanel({
   // 配图
   const [loadingImg, setLoadingImg] = useState(false);
   const [draftImg, setDraftImg] = useState<string | null>(null);
+  const [draftPromptZh, setDraftPromptZh] = useState("");
   const [errImg, setErrImg] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -64,8 +65,9 @@ export default function AiPanel({
     setErrImg("");
     setLoadingImg(true);
     try {
-      const img = await generateImage(poem);
-      setDraftImg(img);
+      const r = await generateImage(poem);
+      setDraftImg(r.image);
+      setDraftPromptZh(r.promptZh || "");
     } catch (e) {
       setErrImg(e instanceof Error ? e.message : "生成失败");
     } finally {
@@ -189,9 +191,14 @@ export default function AiPanel({
                 className="w-full aspect-square object-cover"
               />
               <div className="p-4">
-                <div className="text-sm text-ink-dark font-medium mb-3 text-center">
+                <div className="text-sm text-ink-dark font-medium mb-2 text-center">
                   《{poem.title}》· AI 配图
                 </div>
+                {draftPromptZh && (
+                  <p className="text-xs text-ink-light/70 leading-relaxed mb-3 max-h-24 overflow-y-auto rounded-lg bg-ink/5 p-2">
+                    {draftPromptZh}
+                  </p>
+                )}
                 <div className="flex flex-wrap gap-2 justify-center">
                   <button
                     onClick={runImage}
