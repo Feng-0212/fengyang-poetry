@@ -3,7 +3,7 @@
 // ============================================================
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -15,6 +15,12 @@ import { downloadFile, formatDate, cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { SOLAR_TERMS_META } from "@/lib/solarterms";
 import { usePasswordGate } from "@/components/auth/PasswordGate";
+import {
+  getAiConfig,
+  saveAiConfig,
+  clearAiConfig,
+  type AiConfig,
+} from "@/lib/ai";
 
 export default function SettingsPage() {
   const solarTerm = useSolarTerm();
@@ -29,6 +35,28 @@ export default function SettingsPage() {
     type: "success" | "error" | "info";
     message: string;
   } | null>(null);
+
+  // AI 配置
+  const [aiConfig, setAiConfig] = useState<AiConfig>({
+    apiKey: "",
+    baseUrl: "",
+    textModel: "",
+    imageModel: "",
+  });
+  const [showKey, setShowKey] = useState(false);
+  useEffect(() => {
+    setAiConfig(getAiConfig());
+  }, []);
+
+  const handleSaveAi = () => {
+    saveAiConfig(aiConfig);
+    showNotification("success", "AI 配置已保存（仅存于本设备）");
+  };
+  const handleClearAi = () => {
+    clearAiConfig();
+    setAiConfig({ apiKey: "", baseUrl: "", textModel: "", imageModel: "" });
+    showNotification("info", "已清除 AI 配置，将使用站点默认");
+  };
 
   // 显示通知
   const showNotification = (
@@ -228,6 +256,98 @@ export default function SettingsPage() {
             数据有归，墨迹长存
           </p>
         </div>
+
+        {/* AI 设置 */}
+        <section className="mb-8 p-6 rounded-xl bg-white/60 border border-ink/8">
+          <h2 className="font-[var(--font-mashan)] text-lg text-ink-dark mb-2">
+            AI 设置
+          </h2>
+          <p className="text-sm text-ink-light mb-4 leading-relaxed">
+            用于「AI 赏析」与「AI 配图」。留空则使用站点默认配置；
+            也可填入自己的 API（兼容 OpenAI 接口，如 OpenAI / DeepSeek / 通义千问等）。
+            <span className="text-cinnabar/80">配置仅保存在你本地浏览器，不会上传。</span>
+          </p>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs text-ink-light mb-1">API Key</label>
+              <div className="flex gap-2">
+                <input
+                  type={showKey ? "text" : "password"}
+                  value={aiConfig.apiKey}
+                  onChange={(e) =>
+                    setAiConfig({ ...aiConfig, apiKey: e.target.value })
+                  }
+                  placeholder="sk-...（留空使用站点默认）"
+                  className="flex-1 px-3 py-2 rounded-lg border border-ink/15 bg-white/70 text-sm text-ink focus:border-cinnabar/50 focus:outline-none"
+                />
+                <button
+                  onClick={() => setShowKey((v) => !v)}
+                  className="px-3 py-2 rounded-lg border border-ink/10 text-xs text-ink-light hover:bg-ink/5"
+                >
+                  {showKey ? "隐藏" : "显示"}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs text-ink-light mb-1">
+                Base URL（选填，默认 https://api.openai.com/v1）
+              </label>
+              <input
+                type="text"
+                value={aiConfig.baseUrl}
+                onChange={(e) =>
+                  setAiConfig({ ...aiConfig, baseUrl: e.target.value })
+                }
+                placeholder="https://api.openai.com/v1"
+                className="w-full px-3 py-2 rounded-lg border border-ink/15 bg-white/70 text-sm text-ink focus:border-cinnabar/50 focus:outline-none"
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-ink-light mb-1">
+                  文本模型（赏析）
+                </label>
+                <input
+                  type="text"
+                  value={aiConfig.textModel}
+                  onChange={(e) =>
+                    setAiConfig({ ...aiConfig, textModel: e.target.value })
+                  }
+                  placeholder="gpt-4o-mini"
+                  className="w-full px-3 py-2 rounded-lg border border-ink/15 bg-white/70 text-sm text-ink focus:border-cinnabar/50 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-ink-light mb-1">
+                  图像模型（配图）
+                </label>
+                <input
+                  type="text"
+                  value={aiConfig.imageModel}
+                  onChange={(e) =>
+                    setAiConfig({ ...aiConfig, imageModel: e.target.value })
+                  }
+                  placeholder="dall-e-3"
+                  className="w-full px-3 py-2 rounded-lg border border-ink/15 bg-white/70 text-sm text-ink focus:border-cinnabar/50 focus:outline-none"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 pt-1">
+              <button
+                onClick={handleSaveAi}
+                className="px-5 py-2 rounded-lg bg-cinnabar text-white text-sm font-medium hover:opacity-90 transition-opacity"
+              >
+                保存
+              </button>
+              <button
+                onClick={handleClearAi}
+                className="px-5 py-2 rounded-lg border border-ink/15 text-sm text-ink-light hover:bg-ink/5 transition-colors"
+              >
+                清除
+              </button>
+            </div>
+          </div>
+        </section>
 
         {/* 数据概览 */}
         <section className="mb-8 p-6 rounded-xl bg-white/60 border border-ink/8">

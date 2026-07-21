@@ -13,6 +13,7 @@ import ScrollUnroll, { BrushWrite } from "@/components/poem/ScrollUnroll";
 import { TraditionalSeal } from "@/components/seals/SealStamp";
 import TtsButton from "@/components/poem/TtsButton";
 import ShareCard from "@/components/share/ShareCard";
+import AiPanel from "@/components/ai/AiPanel";
 import { usePoem } from "@/hooks/usePoem";
 import { useSolarTerm } from "@/hooks/useSolarTerm";
 import { getCollectionById } from "@/lib/db";
@@ -254,6 +255,24 @@ export default function PoemDetailPage({ params }: Props) {
                   </div>
                 </div>
 
+                {/* AI 配图（封面） */}
+                {poem.coverImage && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.8, duration: 0.6 }}
+                    className="mb-8 rounded-lg overflow-hidden"
+                    style={{ border: `1px solid ${sealColor}20` }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={poem.coverImage}
+                      alt={poem.title}
+                      className="w-full aspect-video object-cover"
+                    />
+                  </motion.div>
+                )}
+
                 {/* 标题 — 毛笔逐字书写 */}
                 <h1
                   className="font-[var(--font-mashan)] text-3xl md:text-4xl text-ink-dark text-center mb-10"
@@ -316,6 +335,31 @@ export default function PoemDetailPage({ params }: Props) {
                     </div>
                   ))}
                 </div>
+
+                {/* AI 赏析（已保存） */}
+                {poem.aiCommentary && (
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{
+                      delay: 1.8 + lines.length * 0.4 + 0.4,
+                      duration: 0.6,
+                    }}
+                    className="annotation-area"
+                    style={{ borderColor: `${sealColor}30` }}
+                  >
+                    <div className="text-xs text-ink-light/60 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                      <span>赏析</span>
+                      <span className="text-ink-light/40">· AI</span>
+                    </div>
+                    <p
+                      className="text-ink leading-relaxed"
+                      style={{ fontFamily: "var(--font-lxgw)" }}
+                    >
+                      {poem.aiCommentary}
+                    </p>
+                  </motion.div>
+                )}
 
                 {/* 批注 */}
                 {poem.annotation && (
@@ -382,6 +426,12 @@ export default function PoemDetailPage({ params }: Props) {
             >
               生成分享卡片
             </button>
+            <AiPanel
+              poem={poem}
+              sealColor={sealColor}
+              requirePassword={requirePassword}
+              onUpdated={refreshPoem}
+            />
           </motion.div>
         </div>
       </main>

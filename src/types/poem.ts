@@ -53,6 +53,8 @@ export interface Poem {
   dynasty: string; // 朝代，未填默认「佚名」
   content: string;
   annotation?: string;
+  aiCommentary?: string; // AI 赏析（与用户随笔分离）
+  coverImage?: string; // AI 配图 URL 或 dataURL
   season: SeasonKey;
   solarTerm: SolarTermKey;
   isFavorite: boolean;
