@@ -136,7 +136,7 @@ poetry-garden/
 - [x] Phase 3：动效增强（卷轴/毛笔/印章/朗读）
 - [x] Phase 4：多藏架构（墨韵阁）+ 跨藏搜索
 - [x] Phase 5：PWA 离线 + 移动端优化
-- [ ] Phase 6：诗词接龙 / 朋友圈分享卡片
+- [x] Phase 6：诗词接龙 / 朋友圈分享卡片
 - [ ] Phase 7：AI 注释 + AI 配图
 
 ---

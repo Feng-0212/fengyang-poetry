@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 const NAV_LINKS = [
   { href: "/", label: "墨韵阁" },
   { href: "/yuan/sishi-moyuan", label: "四时墨苑" },
+  { href: "/chain", label: "接龙" },
   { href: "/search", label: "搜索" },
   { href: "/settings", label: "设置" },
 ];

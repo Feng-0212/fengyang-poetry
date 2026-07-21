@@ -12,6 +12,7 @@ import AtmosphereLayer from "@/components/poem/AtmosphereLayer";
 import ScrollUnroll, { BrushWrite } from "@/components/poem/ScrollUnroll";
 import { TraditionalSeal } from "@/components/seals/SealStamp";
 import TtsButton from "@/components/poem/TtsButton";
+import ShareCard from "@/components/share/ShareCard";
 import { usePoem } from "@/hooks/usePoem";
 import { useSolarTerm } from "@/hooks/useSolarTerm";
 import { getCollectionById } from "@/lib/db";
@@ -35,6 +36,7 @@ export default function PoemDetailPage({ params }: Props) {
   const solarTermHook = useSolarTerm();
   const { requirePassword } = usePasswordGate();
   const [collection, setCollection] = useState<Collection | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
 
   useEffect(() => {
     if (poem?.collectionId) {
@@ -178,6 +180,15 @@ export default function PoemDetailPage({ params }: Props) {
                 {poem.favoriteCount > 0 && (
                   <span className="text-xs font-medium">{poem.favoriteCount}</span>
                 )}
+              </button>
+              <button
+                onClick={() => setShareOpen(true)}
+                className="w-9 h-9 rounded-full flex items-center justify-center bg-ink/5 text-ink-light hover:bg-cinnabar/10 hover:text-cinnabar transition-all"
+                title="生成分享卡片"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                </svg>
               </button>
               <button
                 onClick={handleDelete}
@@ -365,17 +376,24 @@ export default function PoemDetailPage({ params }: Props) {
             >
               改一改
             </a>
-            <a
-              href={collection ? `/yuan/${collection.slug}/bookmarks` : "/yuan/sishi-moyuan/bookmarks"}
-              className="inline-flex items-center gap-2 text-sm text-ink-light hover:text-ink"
+            <button
+              onClick={() => setShareOpen(true)}
+              className="inline-flex items-center gap-2 text-sm text-ink-light hover:text-cinnabar"
             >
-              生成壁纸
-            </a>
+              生成分享卡片
+            </button>
           </motion.div>
         </div>
       </main>
 
       <Footer />
+
+      <ShareCard
+        poem={poem}
+        collection={collection}
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+      />
     </div>
   );
 }
