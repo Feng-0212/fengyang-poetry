@@ -147,39 +147,92 @@ export default function ShareCard({ poem, collection, open, onClose }: ShareCard
     ctx.stroke();
     ctx.globalAlpha = 1;
 
-    // 正文 —— 竖排，从右到左
-    const lines = poem.content
-      .split(/[\n]/)
+    // 正文 —— 竖排，从右到左（自适应字号 + 过长节选）
+    // 1) 按标点/换行拆成短句，每句为一列
+    const rawVerses = poem.content
+      .split(/[，。；！？、,.!?;:\n]/g)
       .map((l) => l.trim())
       .filter(Boolean);
 
-    const bodyTop = 520;
-    const bodyBottom = H - 320;
-    const colHeight = bodyBottom - bodyTop;
-    const fontSize = 56;
-    const lineGap = 92; // 列间距
-    const charGap = 68; // 字间距
+    // 2) 单句过长则再切分，避免一列塞不下
+    const MAX_COL_CHARS = 18;
+    const wrapVerse = (v: string): string[] => {
+      const arr = Array.from(v);
+      if (arr.length <= MAX_COL_CHARS) return [v];
+      const out: string[] = [];
+      for (let i = 0; i < arr.length; i += MAX_COL_CHARS) {
+        out.push(arr.slice(i, i + MAX_COL_CHARS).join(""));
+      }
+      return out;
+    };
+    const allVerses = rawVerses.flatMap(wrapVerse);
+
+    // 3) 可用绘制区域
+    const availTop = 470;
+    const availBottom = H - 260;
+    const availH = availBottom - availTop;
+    const availLeft = 130;
+    const availRight = W - 130;
+    const availW = availRight - availLeft;
+
+    const MIN_FONT = 30;
+    const MAX_FONT = 58;
+    const CHAR_RATIO = 1.15; // 字间距 = 字号 * 比例
+    const COL_RATIO = 1.62; // 列间距 = 字号 * 比例
+
+    // 4) 计算给定句集能用的最大字号
+    const fitFont = (verses: string[]): number => {
+      const numCols = Math.max(verses.length, 1);
+      const maxChars = Math.max(
+        ...verses.map((v) => Array.from(v).length),
+        1
+      );
+      const fByHeight = availH / (maxChars * CHAR_RATIO);
+      const fByWidth = availW / (numCols * COL_RATIO);
+      return Math.min(fByHeight, fByWidth, MAX_FONT);
+    };
+
+    // 5) 若字号过小则逐列节选，直到达到可读字号
+    let verses = allVerses;
+    let truncated = false;
+    let fontSize = fitFont(verses);
+    while (fontSize < MIN_FONT && verses.length > 2) {
+      verses = verses.slice(0, verses.length - 1);
+      truncated = true;
+      fontSize = fitFont(verses);
+    }
+    fontSize = Math.max(fontSize, MIN_FONT);
+
+    const charGap = fontSize * CHAR_RATIO;
+    const lineGap = fontSize * COL_RATIO;
 
     ctx.font = `500 ${fontSize}px 'Noto Serif SC', 'STKaiti', serif`;
     ctx.fillStyle = s.textColor;
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
 
-    const totalCols = lines.length;
-    const colsWidth = totalCols * lineGap;
+    const numCols = verses.length;
+    const colsWidth = numCols * lineGap;
     let colX = W / 2 + colsWidth / 2 - lineGap / 2;
 
-    for (const line of lines) {
-      const chars = Array.from(line);
+    for (const verse of verses) {
+      const chars = Array.from(verse);
       const lineH = chars.length * charGap;
-      let y = bodyTop + Math.max(0, (colHeight - lineH) / 2);
-      // 超长则从顶部起
-      if (lineH > colHeight) y = bodyTop;
+      let y = availTop + Math.max(0, (availH - lineH) / 2);
       for (const ch of chars) {
         ctx.fillText(ch, colX, y);
         y += charGap;
       }
       colX -= lineGap;
+    }
+
+    // 6) 节选标记
+    if (truncated) {
+      ctx.fillStyle = s.subColor;
+      ctx.font = "400 26px 'Noto Serif SC', serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("—— 节选 ——", W / 2, availBottom + 4);
     }
 
     // 底部信息
