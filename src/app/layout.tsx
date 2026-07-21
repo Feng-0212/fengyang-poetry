@@ -19,7 +19,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "墨韵阁",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "https://poetry-garden.vercel.app"
+  ),
+  title: {
+    default: "墨韵阁",
+    template: "%s | 墨韵阁",
+  },
   description: "四时有墨，苑藏诗意。一座随节气流转的私人诗词园林。",
   keywords: ["诗词", "二十四节气", "水墨", "古籍", "诗意", "墨韵阁"],
   authors: [{ name: "墨韵阁" }],

@@ -3,9 +3,11 @@
 // Key 解析优先级：访客自带 Header > 站点环境变量
 // ============================================================
 import { NextResponse } from "next/server";
+import { cacheGet, cacheSet, hashKey } from "@/lib/kv";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
+const CACHE_TTL = 60 * 60 * 24 * 30; // 30 天
 
 // 只取正文 content（兼容数组），并去除可能残留的 <think> 思考段；
 // 绝不使用 reasoning 字段，避免把 AI 思考过程当结果显示。
@@ -67,6 +69,7 @@ export async function POST(req: Request) {
     author?: string;
     dynasty?: string;
     content?: string;
+    refresh?: boolean;
   };
   try {
     body = await req.json();
@@ -74,9 +77,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "请求格式错误" }, { status: 400 });
   }
 
-  const { title = "", author = "", dynasty = "", content = "" } = body;
+  const { title = "", author = "", dynasty = "", content = "", refresh = false } = body;
   if (!content.trim()) {
     return NextResponse.json({ error: "诗词内容为空" }, { status: 400 });
+  }
+
+  // 仅当使用站点默认 Key（无访客个人 Key）时启用共享缓存，避免个人模型结果外泄
+  const usePersonalKey = !!req.headers.get("x-ai-key");
+  const cacheKey = `ai:annot:${hashKey(model, title, author, dynasty, content)}`;
+  if (!usePersonalKey && !refresh) {
+    const hit = await cacheGet<string>(cacheKey);
+    if (hit && hit.trim()) {
+      return NextResponse.json({ commentary: hit, cached: true });
+    }
   }
 
   const prompt = `请你作为一位古典诗词鉴赏家，为下面这首诗词写一段赏析。
@@ -145,7 +158,10 @@ ${content}`;
         { status: 502 }
       );
     }
-    return NextResponse.json({ commentary: text });
+    if (!usePersonalKey) {
+      await cacheSet(cacheKey, text, CACHE_TTL);
+    }
+    return NextResponse.json({ commentary: text, cached: false });
   } catch (e) {
     return NextResponse.json(
       { error: "网络错误：" + (e instanceof Error ? e.message : String(e)) },
