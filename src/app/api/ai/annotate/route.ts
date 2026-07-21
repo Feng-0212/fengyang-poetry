@@ -7,31 +7,30 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-// 从各种可能的返回结构中提取文本（兼容 content 为数组、reasoning 模型把正文放进 reasoning 字段等情况）
+// 只取正文 content（兼容数组），并去除可能残留的 <think> 思考段；
+// 绝不使用 reasoning 字段，避免把 AI 思考过程当结果显示。
 function extractText(data: unknown): string {
   const msg = (data as { choices?: { message?: Record<string, unknown> }[] })
     ?.choices?.[0]?.message;
   if (!msg) return "";
   const pick = (v: unknown): string => {
     if (!v) return "";
-    if (typeof v === "string") return v.trim();
+    if (typeof v === "string") return v;
     if (Array.isArray(v))
       return v
         .map((p) =>
           typeof p === "string" ? p : (p as { text?: string })?.text || ""
         )
-        .join("")
-        .trim();
+        .join("");
     return "";
   };
-  const psf = msg.provider_specific_fields as Record<string, unknown> | undefined;
-  return (
-    pick(msg.content) ||
-    pick(msg.reasoning_content) ||
-    pick(msg.reasoning) ||
-    pick(psf?.reasoning) ||
-    ""
-  );
+  let text = pick(msg.content);
+  // 去掉 <think>...</think> 或未闭合的 <think> 段
+  text = text
+    .replace(/<think>[\s\S]*?<\/think>/gi, "")
+    .replace(/<think>[\s\S]*/gi, "")
+    .trim();
+  return text;
 }
 
 function resolveConfig(req: Request) {
@@ -106,12 +105,13 @@ ${content}`;
           {
             role: "system",
             content:
-              "你是一位学养深厚的古典诗词鉴赏家，文笔典雅，善于点出诗中意境与妙处。请直接在正文(content)中输出赏析，不要只在思考过程里回答。",
+              "你是一位学养深厚的古典诗词鉴赏家，文笔典雅，善于点出诗中意境与妙处。请直接输出赏析正文，不要输出任何思考过程。",
           },
           { role: "user", content: prompt },
         ],
         temperature: 0.8,
         max_tokens: 1200,
+        chat_template_kwargs: { enable_thinking: false },
       }),
     });
     return resp;

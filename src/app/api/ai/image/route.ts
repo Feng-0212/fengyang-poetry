@@ -86,6 +86,7 @@ async function buildDrawingPrompt(
       ],
       temperature: 0.8,
       max_tokens: 900,
+      chat_template_kwargs: { enable_thinking: false },
     }),
   });
 
@@ -97,16 +98,14 @@ async function buildDrawingPrompt(
   const msg = data?.choices?.[0]?.message || {};
   const pick = (v: unknown): string =>
     typeof v === "string"
-      ? v.trim()
+      ? v
       : Array.isArray(v)
-      ? v.map((p) => (typeof p === "string" ? p : p?.text || "")).join("").trim()
+      ? v.map((p) => (typeof p === "string" ? p : p?.text || "")).join("")
       : "";
-  const raw: string =
-    pick(msg.content) ||
-    pick(msg.reasoning_content) ||
-    pick(msg.reasoning) ||
-    pick(msg?.provider_specific_fields?.reasoning) ||
-    "";
+  const raw: string = pick(msg.content)
+    .replace(/<think>[\s\S]*?<\/think>/gi, "")
+    .replace(/<think>[\s\S]*/gi, "")
+    .trim();
 
   // 解析 JSON（容忍代码块包裹）
   let promptEn = "";
