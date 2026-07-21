@@ -9,7 +9,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useAllPoems } from "@/hooks/usePoem";
 import { useSolarTerm } from "@/hooks/useSolarTerm";
-import { exportAllData, importData, getAllCollections } from "@/lib/db";
+import { importData, getAllCollections } from "@/lib/db";
 import { addPoem as addPoemApi, getAllPoems } from "@/lib/api";
 import { downloadFile, formatDate, cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -47,7 +47,7 @@ export default function SettingsPage() {
     }
     setExporting(true);
     try {
-      const data = await exportAllData();
+      const data = await getAllPoems();
       const exportData = {
         version: "1.0",
         exportedAt: new Date().toISOString(),
@@ -76,7 +76,7 @@ export default function SettingsPage() {
     }
     setExporting(true);
     try {
-      const data = await exportAllData();
+      const data = await getAllPoems();
       let txt = `四时墨苑 · 诗词合集\n`;
       txt += `导出时间：${new Date().toLocaleString("zh-CN")}\n`;
       txt += `诗词数量：${data.length} 首\n`;

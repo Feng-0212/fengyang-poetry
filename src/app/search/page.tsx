@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Fuse from "fuse.js";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { getAllPoems, getAllCollections } from "@/lib/db";
+import { getAllCollections } from "@/lib/db";
 import { getAllPoems as getAllPoemsApi } from "@/lib/api";
 import { getSolarTermMeta, getSeasonName } from "@/lib/solarterms";
 import { cn } from "@/lib/utils";

@@ -208,7 +208,10 @@ export async function toggleFavorite(id: string): Promise<void> {
 }
 
 export async function getAllPoems(): Promise<Poem[]> {
-  return await db.poems.toArray();
+  const all = await db.poems.toArray();
+  return all
+    .filter((p) => !p.deletedAt)
+    .sort((a, b) => b.createdAt - a.createdAt);
 }
 
 export async function getPoemsBySolarTerm(solarTerm: string): Promise<Poem[]> {
