@@ -115,6 +115,24 @@ export default function PoemCard({ poem, index = 0, collection }: Props) {
             {preview}
           </div>
 
+          {/* 用户标签 */}
+          {poem.tags && poem.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-3 relative z-10">
+              {poem.tags.slice(0, 3).map((tag) => (
+                <span
+                  key={tag}
+                  className="text-[11px] px-2 py-0.5 rounded-full"
+                  style={{
+                    backgroundColor: `${meta?.color || "#8B9A6B"}10`,
+                    color: `${meta?.color || "#8B9A6B"}cc`,
+                  }}
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
+
           {/* 底部标签：显示藏印章字 */}
           <div className="flex items-center justify-between relative z-10">
             <div

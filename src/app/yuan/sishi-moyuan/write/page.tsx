@@ -12,6 +12,7 @@ import AtmosphereLayer from "@/components/poem/AtmosphereLayer";
 import { useSolarTerm } from "@/hooks/useSolarTerm";
 import { SOLAR_TERMS_META } from "@/lib/solarterms";
 import { addPoem } from "@/lib/api";
+import TagInput from "@/components/poem/TagInput";
 import { cn } from "@/lib/utils";
 import type { SeasonKey } from "@/types/poem";
 import { COLLECTION_IDS } from "@/types/poem";
@@ -35,6 +36,7 @@ export default function WritePage() {
   const [dynasty, setDynasty] = useState("");
   const [content, setContent] = useState("");
   const [annotation, setAnnotation] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
   const [selectedSeason, setSelectedSeason] = useState<SeasonKey>(solarTerm.season);
   const [selectedSolarTerm, setSelectedSolarTerm] = useState(solarTerm.key);
   const [isVertical, setIsVertical] = useState(false);
@@ -62,6 +64,7 @@ export default function WritePage() {
         season: selectedSeason,
         solarTerm: selectedSolarTerm as any,
         annotation: annotation.trim() || undefined,
+        tags,
         author: author.trim() || "佚名",
         dynasty: dynasty.trim() || "佚名",
         isFavorite: false,
@@ -75,7 +78,7 @@ export default function WritePage() {
     } finally {
       setSaving(false);
     }
-  }, [title, author, dynasty, content, annotation, selectedSeason, selectedSolarTerm, router]);
+  }, [title, author, dynasty, content, annotation, tags, selectedSeason, selectedSolarTerm, router]);
 
   return (
     <div className="paper-texture min-h-screen">
@@ -149,6 +152,11 @@ export default function WritePage() {
             </div>
 
             <div className="h-px mb-8" style={{ background: `linear-gradient(to right, transparent, ${displayTerm.color}40, transparent)` }} />
+          </div>
+
+          <div className="mt-6">
+            <label className="block text-xs text-ink-light mb-2 tracking-wider uppercase">标签</label>
+            <TagInput value={tags} onChange={setTags} accentColor={displayTerm.color} />
           </div>
 
           <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">

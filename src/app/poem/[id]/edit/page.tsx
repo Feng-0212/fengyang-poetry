@@ -13,6 +13,7 @@ import { useSolarTerm } from "@/hooks/useSolarTerm";
 import { SOLAR_TERMS_META, getSolarTermMeta } from "@/lib/solarterms";
 import SealStamp from "@/components/seals/SealStamp";
 import { updatePoem } from "@/lib/api";
+import TagInput from "@/components/poem/TagInput";
 import { getCollectionById } from "@/lib/db";
 import { COLLECTION_IDS } from "@/types/poem";
 import { cn } from "@/lib/utils";
@@ -55,6 +56,7 @@ export default function EditPoemPage({ params }: Props) {
   const [dynasty, setDynasty] = useState("");
   const [content, setContent] = useState("");
   const [annotation, setAnnotation] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
   const [selectedSeason, setSelectedSeason] = useState<SeasonKey>("spring");
   const [selectedSolarTerm, setSelectedSolarTerm] =
     useState<SolarTermKey>("lichun");
@@ -72,6 +74,7 @@ export default function EditPoemPage({ params }: Props) {
       setDynasty(poem.dynasty || "");
       setContent(poem.content);
       setAnnotation(poem.annotation || "");
+      setTags(poem.tags || []);
       setSelectedSeason(poem.season);
       setSelectedSolarTerm(poem.solarTerm);
     }
@@ -86,10 +89,11 @@ export default function EditPoemPage({ params }: Props) {
       dynasty !== (poem.dynasty || "") ||
       content !== poem.content ||
       (annotation || "") !== (poem.annotation || "") ||
+      JSON.stringify(tags) !== JSON.stringify(poem.tags || []) ||
       selectedSeason !== poem.season ||
       selectedSolarTerm !== poem.solarTerm;
     setHasChanges(changed);
-  }, [poem, title, content, annotation, selectedSeason, selectedSolarTerm]);
+  }, [poem, title, content, annotation, tags, selectedSeason, selectedSolarTerm]);
 
   const filteredSolarTerms = SOLAR_TERMS_META.filter(
     (st) => st.season === selectedSeason
@@ -116,6 +120,7 @@ export default function EditPoemPage({ params }: Props) {
           season: selectedSeason,
           solarTerm: selectedSolarTerm,
           annotation: annotation.trim() || undefined,
+          tags,
         });
         setSaved(true);
         setTimeout(() => router.push(`/poem/${poem.id}`), 1200);
@@ -126,7 +131,7 @@ export default function EditPoemPage({ params }: Props) {
         setSaving(false);
       }
     });
-  }, [requirePassword, poem, title, author, dynasty, content, annotation, selectedSeason, selectedSolarTerm, router]);
+  }, [requirePassword, poem, title, author, dynasty, content, annotation, tags, selectedSeason, selectedSolarTerm, router]);
 
   if (loading) {
     return (
@@ -267,6 +272,12 @@ export default function EditPoemPage({ params }: Props) {
                 className="w-full min-h-[80px] bg-transparent border-none outline-none resize-none text-sm text-ink-light leading-relaxed placeholder:text-ink-light/30"
                 style={{ fontFamily: "var(--font-lxgw)" }}
               />
+            </div>
+
+            {/* 标签 */}
+            <div className="mb-8">
+              <label className="block text-xs text-ink-light mb-2 tracking-wider uppercase">标签</label>
+              <TagInput value={tags} onChange={setTags} accentColor={themeColor} />
             </div>
 
             {/* 分割线 */}

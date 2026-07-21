@@ -32,7 +32,7 @@ export function usePoem(id: string) {
         try {
           // 回写本地缓存
           const existing = await db.poems.get(id);
-          if (existing) await db.poems.update(id, p);
+          if (existing) await db.poems.update(id, p as any);
           else await db.poems.add(p);
         } catch {}
       }

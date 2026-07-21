@@ -55,6 +55,7 @@ export interface Poem {
   annotation?: string;
   aiCommentary?: string; // AI 赏析（与用户随笔分离）
   coverImage?: string; // AI 配图 URL 或 dataURL
+  tags?: string[]; // 用户自定义标签（如：思乡、山水、豪放）
   season: SeasonKey;
   solarTerm: SolarTermKey;
   isFavorite: boolean;

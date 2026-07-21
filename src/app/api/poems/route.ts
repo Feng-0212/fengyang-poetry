@@ -72,6 +72,7 @@ export async function POST(req: Request) {
       season: body.season || "",
       solarTerm: body.solarTerm || "",
       annotation: body.annotation || undefined,
+      tags: Array.isArray(body.tags) ? body.tags : [],
       isFavorite: false,
       favoriteCount: 0,
       createdAt: now,

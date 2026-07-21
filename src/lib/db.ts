@@ -179,7 +179,7 @@ export async function updatePoem(
   await db.poems.update(id, {
     ...changes,
     updatedAt: Date.now(),
-  });
+  } as any);
   if (changes.collectionId && poem && changes.collectionId !== poem.collectionId) {
     await updateCollectionCount(poem.collectionId);
     await updateCollectionCount(changes.collectionId);

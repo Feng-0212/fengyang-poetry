@@ -294,6 +294,22 @@ export default function PoemDetailPage({ params }: Props) {
                   </div>
                 )}
 
+                {/* 标签 */}
+                {poem.tags && poem.tags.length > 0 && (
+                  <div className="flex flex-wrap justify-center gap-2 mb-6">
+                    {poem.tags.map((tag) => (
+                      <Link
+                        key={tag}
+                        href={`/tags/${encodeURIComponent(tag)}`}
+                        className="text-xs px-3 py-1 rounded-full transition-opacity hover:opacity-70"
+                        style={{ backgroundColor: `${sealColor}15`, color: sealColor }}
+                      >
+                        #{tag}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+
                 {/* 朗读按钮 */}
                 <motion.div
                   className="flex justify-center mb-10"

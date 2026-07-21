@@ -13,6 +13,7 @@ import { useSolarTerm } from "@/hooks/useSolarTerm";
 import { useCollection } from "@/hooks/useCollection";
 import { SOLAR_TERMS_META } from "@/lib/solarterms";
 import { addPoem } from "@/lib/api";
+import TagInput from "@/components/poem/TagInput";
 import { cn } from "@/lib/utils";
 import type { SeasonKey } from "@/types/poem";
 import { motion, AnimatePresence } from "framer-motion";
@@ -42,6 +43,7 @@ export default function CollectionWritePage({ params }: Props) {
   const [dynasty, setDynasty] = useState("");
   const [content, setContent] = useState("");
   const [annotation, setAnnotation] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
   const [selectedSeason, setSelectedSeason] = useState<SeasonKey>(solarTerm.season);
   const [selectedSolarTerm, setSelectedSolarTerm] = useState(solarTerm.key);
   const [isVertical, setIsVertical] = useState(false);
@@ -68,6 +70,7 @@ export default function CollectionWritePage({ params }: Props) {
         season: selectedSeason,
         solarTerm: selectedSolarTerm as any,
         annotation: annotation.trim() || undefined,
+        tags,
         author: author.trim() || "佚名",
         dynasty: dynasty.trim() || "佚名",
         isFavorite: false,
@@ -81,7 +84,7 @@ export default function CollectionWritePage({ params }: Props) {
     } finally {
       setSaving(false);
     }
-  }, [title, author, dynasty, content, annotation, selectedSeason, selectedSolarTerm, collection, slug, router]);
+  }, [title, author, dynasty, content, annotation, tags, selectedSeason, selectedSolarTerm, collection, slug, router]);
 
   const handleSubmit = useCallback(() => {
     requirePassword(doSave);
@@ -213,6 +216,11 @@ export default function CollectionWritePage({ params }: Props) {
               className="h-px mb-8"
               style={{ background: `linear-gradient(to right, transparent, ${collection.color}40, transparent)` }}
             />
+          </div>
+
+          <div className="mt-6">
+            <label className="block text-xs text-ink-light mb-2 tracking-wider uppercase">标签</label>
+            <TagInput value={tags} onChange={setTags} accentColor={collection.color} />
           </div>
 
           <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
