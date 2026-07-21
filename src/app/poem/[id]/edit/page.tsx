@@ -10,7 +10,8 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { usePoem } from "@/hooks/usePoem";
 import { useSolarTerm } from "@/hooks/useSolarTerm";
-import { SOLAR_TERMS_META } from "@/lib/solarterms";
+import { SOLAR_TERMS_META, getSolarTermMeta } from "@/lib/solarterms";
+import SealStamp from "@/components/seals/SealStamp";
 import { updatePoem } from "@/lib/api";
 import { getCollectionById } from "@/lib/db";
 import { COLLECTION_IDS } from "@/types/poem";
@@ -187,12 +188,21 @@ export default function EditPoemPage({ params }: Props) {
               animate={{ scale: [0.9, 1] }}
               className="absolute top-6 right-6"
             >
-              <div
-                className="seal-stamp text-sm"
-                style={{ backgroundColor: displayTerm.color }}
-              >
-                {displayTerm.name}
-              </div>
+              {isSishiMoyuan ? (
+                <SealStamp
+                  term={selectedSolarTerm}
+                  size="sm"
+                  color={displayTerm.color}
+                  animated={false}
+                />
+              ) : (
+                <div
+                  className="seal-stamp text-sm"
+                  style={{ backgroundColor: themeColor }}
+                >
+                  {collection?.seal}
+                </div>
+              )}
             </motion.div>
 
             {/* 修改提示徽章 */}
@@ -216,7 +226,7 @@ export default function EditPoemPage({ params }: Props) {
               <div
                 className="h-px mt-4"
                 style={{
-                  background: `linear-gradient(to right, transparent, ${displayTerm.color}40, transparent)`,
+                  background: `linear-gradient(to right, transparent, ${themeColor}40, transparent)`,
                 }}
               />
             </div>
@@ -263,7 +273,7 @@ export default function EditPoemPage({ params }: Props) {
             <div
               className="h-px mb-8"
               style={{
-                background: `linear-gradient(to right, transparent, ${displayTerm.color}40, transparent)`,
+                background: `linear-gradient(to right, transparent, ${themeColor}40, transparent)`,
               }}
             />
           </div>
