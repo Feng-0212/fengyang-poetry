@@ -111,3 +111,19 @@ export async function generateImage(poem: Poem): Promise<ImageResult> {
     promptZh: data.promptZh as string | undefined,
   };
 }
+
+/** 生成 AI 标签建议 */
+export async function getAiTags(
+  title: string,
+  content: string,
+  author?: string
+): Promise<string[]> {
+  const res = await fetch("/api/ai/tags", {
+    method: "POST",
+    headers: buildHeaders("text"),
+    body: JSON.stringify({ title, content, author }),
+  });
+  if (!res.ok) throw new Error(await parseError(res));
+  const data = await res.json();
+  return (data.tags as string[]).filter(Boolean);
+}

@@ -15,6 +15,7 @@ import { downloadFile, formatDate, cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { SOLAR_TERMS_META } from "@/lib/solarterms";
 import { usePasswordGate } from "@/components/auth/PasswordGate";
+import TagManager from "@/components/settings/TagManager";
 import {
   getAiConfig,
   saveAiConfig,
@@ -31,6 +32,7 @@ export default function SettingsPage() {
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
   const [seeding, setSeeding] = useState(false);
+  const [tagMgrKey, setTagMgrKey] = useState(0);
   const [notification, setNotification] = useState<{
     type: "success" | "error" | "info";
     message: string;
@@ -494,6 +496,22 @@ export default function SettingsPage() {
               {seeding ? "添加中..." : "· 导入示例数据（7首） ·"}
             </button>
           </div>
+        </section>
+
+        {/* 标签管理 */}
+        <section className="mb-8 p-6 rounded-xl bg-white/60 border border-ink/8">
+          <h2 className="font-[var(--font-mashan)] text-lg text-ink-dark mb-2">
+            标签管理
+          </h2>
+          <p className="text-sm text-ink-light mb-4">
+            查看、重命名、合并或删除诗词标签（需密码）
+          </p>
+          <TagManager
+            key={tagMgrKey}
+            requirePassword={requirePassword}
+            onDone={() => setTagMgrKey((k) => k + 1)}
+            accentColor="#C14A3F"
+          />
         </section>
 
         {/* 其他管理 */}

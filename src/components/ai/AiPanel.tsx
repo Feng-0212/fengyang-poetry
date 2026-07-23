@@ -6,7 +6,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Poem } from "@/types/poem";
-import { generateCommentary, generateImage } from "@/lib/ai";
+import { generateCommentary, generateImage, getAiTags } from "@/lib/ai";
 import { updatePoem } from "@/lib/api";
 
 interface Props {
@@ -26,6 +26,12 @@ export default function AiPanel({
   const [loadingC, setLoadingC] = useState(false);
   const [draftC, setDraftC] = useState<string | null>(null);
   const [errC, setErrC] = useState("");
+
+  // 标签
+  const [loadingTags, setLoadingTags] = useState(false);
+  const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [errTags, setErrTags] = useState("");
 
   // 配图
   const [loadingImg, setLoadingImg] = useState(false);
@@ -75,6 +81,37 @@ export default function AiPanel({
     }
   };
 
+  const runTags = async () => {
+    setErrTags("");
+    setLoadingTags(true);
+    try {
+      const tags = await getAiTags(poem.title, poem.content, poem.author);
+      setSuggestedTags(tags);
+      setSelectedTags(tags);
+    } catch (e) {
+      setErrTags(e instanceof Error ? e.message : "生成失败");
+    } finally {
+      setLoadingTags(false);
+    }
+  };
+
+  const saveTags = async (toAdd: string[]) => {
+    if (toAdd.length === 0) return;
+    await requirePassword(async () => {
+      setSaving(true);
+      try {
+        const existing = new Set(poem.tags || []);
+        const merged = [...new Set([...Array.from(existing), ...toAdd])].slice(0, 8);
+        await updatePoem(poem.id, { tags: merged });
+        setSuggestedTags([]);
+        setSelectedTags([]);
+        onUpdated();
+      } finally {
+        setSaving(false);
+      }
+    });
+  };
+
   const saveCover = async () => {
     if (!draftImg) return;
     await requirePassword(async () => {
@@ -114,6 +151,13 @@ export default function AiPanel({
       >
         {loadingImg ? "作画中…" : "🖼️ AI 配图"}
       </button>
+      <button
+        onClick={runTags}
+        disabled={loadingTags}
+        className="inline-flex items-center gap-1.5 text-sm text-ink-light hover:text-cinnabar transition-colors disabled:opacity-50"
+      >
+        {loadingTags ? "打标签中…" : "🏷️ AI 打标签"}
+      </button>
 
       {/* 错误提示 */}
       {(errC || errImg) && (
@@ -124,7 +168,61 @@ export default function AiPanel({
 
       {/* 赏析草稿面板 */}
       <AnimatePresence>
-        {draftC && (
+        {/* 标签建议面板 */}
+      <AnimatePresence>
+        {suggestedTags.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            className="w-full max-w-xl mx-auto mt-6 rounded-xl border bg-white/80 p-5 text-left"
+            style={{ borderColor: `${sealColor}30` }}
+          >
+            <div className="text-xs text-ink-light/60 uppercase tracking-wider mb-2">
+              AI 标签建议
+            </div>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {suggestedTags.map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() =>
+                    setSelectedTags((prev) =>
+                      prev.includes(tag)
+                        ? prev.filter((t) => t !== tag)
+                        : [...prev, tag]
+                    )
+                  }
+                  className={`px-3 py-1.5 rounded-full text-sm border transition-all ${
+                    selectedTags.includes(tag)
+                      ? "border-cinnabar/40 text-cinnabar bg-cinnabar/8"
+                      : "border-ink/10 text-ink-light hover:border-cinnabar/30"
+                  }`}
+                >
+                  {selectedTags.includes(tag) ? "✓ " : "+ "}#{tag}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => { setSuggestedTags([]); setSelectedTags([]); }}
+                className="px-3 py-1.5 rounded-lg border border-ink/15 text-xs text-ink-light hover:bg-ink/5"
+              >
+                关闭
+              </button>
+              <button
+                onClick={() => saveTags(selectedTags)}
+                disabled={saving || selectedTags.length === 0}
+                className="px-4 py-1.5 rounded-lg bg-cinnabar text-white text-xs font-medium hover:opacity-90 disabled:opacity-50"
+              >
+                {saving ? "保存中…" : `添加到本诗 (${selectedTags.length})`}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 赏析草稿面板 */}
+      {draftC && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
