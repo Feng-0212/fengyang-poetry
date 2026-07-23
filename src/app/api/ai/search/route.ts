@@ -3,8 +3,10 @@
 // 输入自然语言查询，返回相关诗词 ID 列表
 // ============================================================
 import { NextResponse } from "next/server";
-import { kv } from "@upstash/redis";
+import { Redis } from "@upstash/redis";
 import { cacheGet, cacheSet, hashKey } from "@/lib/kv";
+
+const redis = Redis.fromEnv();
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -88,7 +90,7 @@ export async function POST(req: Request) {
   // 获取所有诗词（直接从 Redis）
   let poems: Array<{ id: string; title: string; author?: string; content: string; tags?: string[] }> = [];
   try {
-    const poemsData = await kv.get<{ id: string; title: string; author?: string; content: string; tags?: string[]; deletedAt?: string }[]>("poems:all");
+    const poemsData = await redis.get<{ id: string; title: string; author?: string; content: string; tags?: string[]; deletedAt?: string }[]>("poems:all");
     if (poemsData && Array.isArray(poemsData)) {
       poems = poemsData
         .filter((p) => !p.deletedAt)
