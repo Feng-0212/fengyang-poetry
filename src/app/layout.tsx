@@ -4,6 +4,7 @@
 import type { Metadata, Viewport } from "next";
 import ClientShell from "@/components/layout/ClientShell";
 import ServiceWorkerRegister from "@/components/pwa/ServiceWorkerRegister";
+import ErrorBoundary from "@/components/common/ErrorBoundary";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -67,7 +68,9 @@ export default function RootLayout({
         />
       </head>
       <body className="paper-texture antialiased">
-        <ClientShell>{children}</ClientShell>
+        <ErrorBoundary>
+          <ClientShell>{children}</ClientShell>
+        </ErrorBoundary>
         <ServiceWorkerRegister />
       </body>
     </html>

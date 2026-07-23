@@ -1,15 +1,14 @@
 // ============================================================
 // API: AI 诗词配图（两步：先生成绘画提示词，再据提示词生图）
-// 兼容 OpenAI Images Generations（DALL·E / gpt-image-1 / 通义万相 等）
-// Key 解析优先级：访客自带 Header > 站点环境变量
-// 文本(提示词)与图像可分别配置 Provider：
-//   文本：AI_API_KEY / AI_BASE_URL / AI_TEXT_MODEL
-//   图像：AI_IMAGE_API_KEY / AI_IMAGE_BASE_URL / AI_IMAGE_MODEL（缺省回退到文本 Provider）
+// 增强：自动重试 + 备选模型 + 回退图池
 // ============================================================
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
+
+// 指数退避延迟
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 // 文本 Provider（生成绘画提示词用）
 function resolveTextConfig(req: Request) {
@@ -46,7 +45,12 @@ function resolveImageConfig(req: Request) {
   baseUrl = baseUrl.replace(/\/+$/, "");
   const model =
     h.get("x-ai-image-model") || process.env.AI_IMAGE_MODEL || "dall-e-3";
-  return { key, baseUrl, model };
+  // 备选模型（环境变量 AI_IMAGE_MODEL_FALLBACK，逗号分隔）
+  const fallbackModels = (process.env.AI_IMAGE_MODEL_FALLBACK || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return { key, baseUrl, model, fallbackModels };
 }
 
 // 第一步：调用文本模型，按固定模版生成绘画提示词（英文 + 中文）
@@ -103,8 +107,8 @@ async function buildDrawingPrompt(
       ? v.map((p) => (typeof p === "string" ? p : p?.text || "")).join("")
       : "";
   const raw: string = pick(msg.content)
-    .replace(/<think>[\s\S]*?<\/think>/gi, "")
-    .replace(/<think>[\s\S]*/gi, "")
+    .replace(/<tool_call>[\s\S]*?<\/think>/gi, "")
+    .replace(/<tool_call>[\s\S]*/gi, "")
     .trim();
 
   // 解析 JSON（容忍代码块包裹）
@@ -127,6 +131,99 @@ async function buildDrawingPrompt(
   return { promptEn, promptZh };
 }
 
+// 回退图池（按节气/季节分类，实际项目用真实图片 URL）
+const FALLBACK_IMAGES: Record<string, string[]> = {
+  spring: [
+    "/images/fallback/spring-1.jpg",
+    "/images/fallback/spring-2.jpg",
+    "/images/fallback/spring-3.jpg",
+  ],
+  summer: [
+    "/images/fallback/summer-1.jpg",
+    "/images/fallback/summer-2.jpg",
+    "/images/fallback/summer-3.jpg",
+  ],
+  autumn: [
+    "/images/fallback/autumn-1.jpg",
+    "/images/fallback/autumn-2.jpg",
+    "/images/fallback/autumn-3.jpg",
+  ],
+  winter: [
+    "/images/fallback/winter-1.jpg",
+    "/images/fallback/winter-2.jpg",
+    "/images/fallback/winter-3.jpg",
+  ],
+  default: ["/images/fallback/default-1.jpg", "/images/fallback/default-2.jpg"],
+};
+
+// 根据季节选择回退图
+function getFallbackImage(season?: string): string {
+  const pool = FALLBACK_IMAGES[season || "default"] || FALLBACK_IMAGES.default;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// 尝试调用图像生成 API（带重试）
+async function generateImageWithRetry(
+  cfg: { key: string; baseUrl: string; model: string; fallbackModels: string[] },
+  promptEn: string,
+  maxRetries = 3
+): Promise<{ image: string; model: string; retries: number }> {
+  const models = [cfg.model, ...cfg.fallbackModels];
+  let lastError = "";
+
+  for (const model of models) {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        if (attempt > 0) {
+          // 指数退避：1s, 2s, 4s
+          await sleep(1000 * Math.pow(2, attempt - 1));
+        }
+
+        const resp = await fetch(`${cfg.baseUrl}/images/generations`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${cfg.key}`,
+          },
+          body: JSON.stringify({
+            model,
+            prompt: promptEn,
+            n: 1,
+            size: "1024x1024",
+          }),
+        });
+
+        if (!resp.ok) {
+          const errText = await resp.text().catch(() => "");
+          lastError = `(${resp.status}) ${errText.slice(0, 100)}`;
+          // 503/429 重试，其他错误直接跳过该模型
+          if (resp.status !== 503 && resp.status !== 429) break;
+          continue;
+        }
+
+        const data = await resp.json();
+        const item = data?.data?.[0];
+        let image = "";
+        if (item?.url) {
+          image = item.url;
+        } else if (item?.b64_json) {
+          image = `data:image/png;base64,${item.b64_json}`;
+        }
+        if (!image) {
+          lastError = "返回为空";
+          continue;
+        }
+
+        return { image, model, retries: attempt };
+      } catch (e) {
+        lastError = e instanceof Error ? e.message : String(e);
+      }
+    }
+  }
+
+  throw new Error(lastError || "所有模型均失败");
+}
+
 export async function POST(req: Request) {
   const textCfg = resolveTextConfig(req);
   const imgCfg = resolveImageConfig(req);
@@ -137,13 +234,13 @@ export async function POST(req: Request) {
     );
   }
 
-  let body: { title?: string; content?: string };
+  let body: { title?: string; content?: string; season?: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "请求格式错误" }, { status: 400 });
   }
-  const { title = "", content = "" } = body;
+  const { title = "", content = "", season } = body;
   if (!content.trim()) {
     return NextResponse.json({ error: "诗词内容为空" }, { status: 400 });
   }
@@ -164,49 +261,26 @@ export async function POST(req: Request) {
     promptEn = `New Chinese-style aesthetic illustration inspired by the classical Chinese poem "${title}": ${content}. Minimalist composition with generous negative space, soft light and atmosphere, 8k, ultra-detailed, masterpiece. No text, no calligraphy, no seal, no watermark.`;
   }
 
-  // 第二步：据提示词生图
+  // 第二步：据提示词生图（带重试）
   try {
-    const resp = await fetch(`${imgCfg.baseUrl}/images/generations`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${imgCfg.key}`,
-      },
-      body: JSON.stringify({
-        model: imgCfg.model,
-        prompt: promptEn,
-        n: 1,
-        size: "1024x1024",
-      }),
+    const result = await generateImageWithRetry(imgCfg, promptEn, 3);
+    return NextResponse.json({
+      image: result.image,
+      promptEn,
+      promptZh,
+      model: result.model,
+      retries: result.retries,
     });
-
-    if (!resp.ok) {
-      const errText = await resp.text().catch(() => "");
-      return NextResponse.json(
-        { error: `绘图调用失败 (${resp.status})`, detail: errText.slice(0, 300), promptEn, promptZh },
-        { status: 502 }
-      );
-    }
-
-    const data = await resp.json();
-    const item = data?.data?.[0];
-    let image = "";
-    if (item?.url) {
-      image = item.url;
-    } else if (item?.b64_json) {
-      image = `data:image/png;base64,${item.b64_json}`;
-    }
-    if (!image) {
-      return NextResponse.json(
-        { error: "绘图返回为空", promptEn, promptZh },
-        { status: 502 }
-      );
-    }
-    return NextResponse.json({ image, promptEn, promptZh });
   } catch (e) {
-    return NextResponse.json(
-      { error: "网络错误：" + (e instanceof Error ? e.message : String(e)) },
-      { status: 500 }
-    );
+    // 所有重试失败，返回回退图
+    const fallback = getFallbackImage(season);
+    console.error("[AI Image] All retries failed, using fallback:", e);
+    return NextResponse.json({
+      image: fallback,
+      promptEn,
+      promptZh,
+      fallback: true,
+      error: e instanceof Error ? e.message : String(e),
+    });
   }
 }

@@ -15,7 +15,8 @@ import { downloadFile, formatDate, cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { SOLAR_TERMS_META } from "@/lib/solarterms";
 import { usePasswordGate } from "@/components/auth/PasswordGate";
-import TagManager from "@/components/settings/TagManager";
+import dynamic from "next/dynamic";
+const TagManager = dynamic(() => import("@/components/settings/TagManager"));
 import {
   getAiConfig,
   saveAiConfig,
