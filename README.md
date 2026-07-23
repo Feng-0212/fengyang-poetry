@@ -49,13 +49,14 @@
 ### ⚙️ 工程能力
 
 - **数据存储**：Upstash Redis（生产）+ IndexedDB（离线降级）
-- **数据备份**：每日自动备份到 Redis，支持手动导出 JSON
+- **数据备份**：每日自动备份到 Redis，支持手动导出 JSON、快照历史回溯
+- **限流保护**：AI 接口基于 Redis 滑动窗口限流（每 IP 20 次/分钟），返回 429 + Retry-After
 - **标签体系**：自由标签 + AI 智能打标签（18 个预定义标签池）
 - **数据统计**：写作热力图 + 标签词云 + 季节分布 + 趋势图
 - **导入/导出**：JSON 批量备份，TXT 单首分享
 - **回收站**：30 天软删除
 - **快捷键**：`⌘K` 搜索，`⌘Enter` 提交
-- **TTS 朗读**：诗词语音朗读（Web Speech API）
+- **TTS 朗读**：真人级中文神经网络音色（微软 Edge TTS 预生成 + Redis 缓存，浏览器 Web Speech 降级，5 种音色可切换）
 - **PWA**：可加入桌面/手机主屏，离线可用
 
 ### 🤖 AI 能力
@@ -83,7 +84,7 @@
 |------|------|
 | 框架 | **Next.js 15** (App Router) |
 | 渲染 | RSC + Client Components |
-| 数据 | **IndexedDB** (Dexie 4) |
+| 数据 | **Upstash Redis**（生产）+ IndexedDB (Dexie 4，离线降级) |
 | 样式 | Tailwind CSS 3 + CSS 变量 |
 | 动效 | Framer Motion 11 |
 | 搜索 | Fuse.js 7（模糊匹配） |
@@ -129,7 +130,7 @@ poetry-garden/
 │   │   │   ├── [slug]/page.tsx   # 通用藏主页
 │   │   │   ├── new/page.tsx      # 创建新藏
 │   │   │   └── sishi-moyuan/     # 四时墨苑完整版（节气+季节）
-│   │   ├── settings/             # 设置
+│   │   ├── settings/             # 设置（AI/外观/备份/批量标签）
 │   │   └── ...
 │   ├── components/
 │   │   ├── poem/                 # PoemCard, SolarTermNav, TtsButton ...
@@ -138,11 +139,21 @@ poetry-garden/
 │   │   └── search/               # SearchModal (⌘K)
 │   ├── hooks/                    # useSolarTerm, usePoem, useCollection ...
 │   ├── lib/
-│   │   ├── db.ts                 # Dexie 数据库
+│   │   ├── db.ts                 # Dexie（IndexedDB 离线降级）
+│   │   ├── api.ts                # 客户端数据访问（云端 API 封装）
+│   │   ├── kv.ts                 # Upstash Redis 封装 + 内存回退
+│   │   ├── ratelimit.ts          # 基于 Redis 的 IP 限流
+│   │   ├── ai.ts                 # 客户端 AI 工具库（赏析/配图/自定义 Key）
+│   │   ├── export.ts             # 导出诗集（Markdown/TXT/PDF）
+│   │   ├── chain.ts              # 诗词接龙名句库与规则
+│   │   ├── pinyin.ts             # 拼音搜索（按需加载）
 │   │   ├── solarterms.ts         # 24 节气元数据
 │   │   └── utils.ts              # 工具函数
 │   └── types/poem.ts             # 类型定义
-├── public/                       # 静态资源
+├── scripts/                      # 维护脚本（TTS 预生成/校验/编码扫描）
+├── public/                       # 静态资源 + PWA（manifest / SW / 回退图池）
+├── .github/workflows/deploy.yml  # GitHub Actions 自动部署
+├── vercel.json                   # Vercel 配置（Cron 每日备份）
 ├── tailwind.config.ts
 ├── tsconfig.json
 └── package.json
@@ -161,6 +172,10 @@ poetry-garden/
 - [x] Phase 7：AI 赏析 + AI 配图（支持自定义 API Key）
 - [x] P0 优化：AI 配图稳定性（重试/备选/回退图池）+ 移动端性能 + 错误边界
 - [x] P1 功能：数据统计可视化 + 搜索增强（拼音 + 语义搜索）
+- [x] P2 体验：暗色模式 + 字号调节 + 数据导出诗集（Markdown / TXT / 打印 PDF）
+- [x] 安全加固：AI 接口限流 + 备份快照历史 + AI 批量打标签
+- [x] 朗读升级：真人级中文 TTS（预生成 + Redis 缓存 + 浏览器降级）
+- [x] CI/CD：GitHub Actions 自动部署到 Vercel
 
 ---
 
