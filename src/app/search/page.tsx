@@ -193,9 +193,25 @@ function SearchContent() {
         <div className="max-w-5xl mx-auto px-6 py-10">
           {/* 顶部 Hero */}
           <div className="mb-8">
-            <h1 className="font-[var(--font-mashan)] text-4xl text-ink-dark mb-2" style={{ fontFamily: "var(--font-mashan)" }}>
-              跨藏搜索
-            </h1>
+            <div className="flex items-center justify-between mb-2">
+              <h1 className="font-[var(--font-mashan)] text-4xl text-ink-dark" style={{ fontFamily: "var(--font-mashan)" }}>
+                跨藏搜索
+              </h1>
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/stats"
+                  className="text-sm px-3 py-1.5 rounded-lg border border-ink/10 text-ink-light hover:border-cinnabar/30 hover:text-cinnabar transition-all"
+                >
+                  📊 统计
+                </Link>
+                <Link
+                  href="/tags"
+                  className="text-sm px-3 py-1.5 rounded-lg border border-ink/10 text-ink-light hover:border-cinnabar/30 hover:text-cinnabar transition-all"
+                >
+                  🏷️ 标签
+                </Link>
+              </div>
+            </div>
             <p className="text-ink-light text-sm">穿越 6 藏 · 共 {allPoems.length} 首诗词</p>
           </div>
 
