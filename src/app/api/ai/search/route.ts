@@ -3,7 +3,7 @@
 // 输入自然语言查询，返回相关诗词 ID 列表
 // ============================================================
 import { NextResponse } from "next/server";
-import { getAllPoems } from "@/lib/api";
+import { kv } from "@upstash/redis";
 import { cacheGet, cacheSet, hashKey } from "@/lib/kv";
 
 export const runtime = "nodejs";
@@ -85,18 +85,34 @@ export async function POST(req: Request) {
     }
   }
 
-  // 获取所有诗词
-  const poems = await getAllPoems();
-  const poemList = poems
-    .filter((p) => !p.deletedAt)
-    .slice(0, 100) // 限制数量，避免 token 过多
-    .map((p) => ({
-      id: p.id,
-      title: p.title,
-      author: p.author || "佚名",
-      content: p.content.slice(0, 100),
-      tags: p.tags || [],
-    }));
+  // 获取所有诗词（直接从 Redis）
+  let poems: Array<{ id: string; title: string; author?: string; content: string; tags?: string[] }> = [];
+  try {
+    const poemsData = await kv.get<{ id: string; title: string; author?: string; content: string; tags?: string[]; deletedAt?: string }[]>("poems:all");
+    if (poemsData && Array.isArray(poemsData)) {
+      poems = poemsData
+        .filter((p) => !p.deletedAt)
+        .slice(0, 100)
+        .map((p) => ({
+          id: p.id,
+          title: p.title,
+          author: p.author || "佚名",
+          content: p.content.slice(0, 100),
+          tags: p.tags || [],
+        }));
+    }
+  } catch (err) {
+    console.error("[AI Search] Failed to fetch poems:", err);
+  }
+
+  if (poems.length === 0) {
+    return NextResponse.json(
+      { error: "暂无诗词数据，请先添加诗词" },
+      { status: 400 }
+    );
+  }
+
+  const poemList = poems;
 
   const prompt = `你是一位古典诗词专家。用户用自然语言描述想要找的诗词，请从给定的诗词列表中选出最相关的 ${limit} 首。
 
