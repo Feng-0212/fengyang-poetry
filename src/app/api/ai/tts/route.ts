@@ -9,7 +9,12 @@ import { createRateLimiter, retryAfterHeader } from "@/lib/ratelimit";
 import { MsEdgeTTS, OUTPUT_FORMAT } from "msedge-tts";
 
 export const runtime = "nodejs";
-export const maxDuration = 30;
+export const maxDuration = 15;
+
+// Vercel 数据中心 IP 会被微软 Edge TTS 封禁，运行时合成基本必超时。
+// 因此：默认只服务「预生成缓存」；仅当显式开启 TTS_RUNTIME_SYNTH 才在运行时尝试合成（短超时快速失败）。
+const RUNTIME_SYNTH = process.env.TTS_RUNTIME_SYNTH === "1";
+const SYNTH_TIMEOUT_MS = 7000;
 
 const CACHE_TTL = 60 * 60 * 24 * 60; // 60 天
 const MAX_TEXT = 600; // 单次朗读最大字数，防滥用
@@ -44,7 +49,7 @@ async function synth(voiceName: string, text: string, rate: string): Promise<Buf
     const timer = setTimeout(() => {
       try { tts.close(); } catch { /* ignore */ }
       reject(new Error("TTS 合成超时"));
-    }, 25_000);
+    }, SYNTH_TIMEOUT_MS);
     audioStream.on("data", (c: Buffer) => chunks.push(Buffer.from(c)));
     audioStream.on("end", () => {
       clearTimeout(timer);
@@ -105,7 +110,15 @@ export async function POST(req: Request) {
     }
   } catch { /* 缓存不可用则跳过 */ }
 
-  // 合成
+  // 未命中缓存：默认直接返回 503，让前端快速回退浏览器 TTS（避免 25s 干等）
+  if (!RUNTIME_SYNTH) {
+    return Response.json(
+      { error: "no-cache", fallback: "browser" },
+      { status: 503, headers: { "X-Cache": "MISS" } }
+    );
+  }
+
+  // 合成（仅在显式开启运行时合成时走到这里）
   try {
     const audio = await synth(voiceName, text, rate);
     if (!audio || audio.length === 0) {
