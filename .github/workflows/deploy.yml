@@ -7,7 +7,6 @@ on:
   pull_request:
     branches:
       - main
-  workflow_dispatch:
 
 env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -36,22 +35,8 @@ jobs:
       - name: Pull Vercel Environment Information
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Override sensitive secrets with real values
-        run: |
-          ENV_FILE=".vercel/.env.production.local"
-          [ -f "$ENV_FILE" ] || { echo "Env file missing"; exit 1; }
-          if [ -n "${{ secrets.REDIS_URL }}" ]; then
-            sed -i "s|^REDIS_URL=.*$|REDIS_URL=${{ secrets.REDIS_URL }}|" "$ENV_FILE"
-          fi
-          echo "REDIS_URL (after override): $(grep ^REDIS_URL= "$ENV_FILE" | sed 's/=.*/=***/')"
-
-      - name: Build with environment variables
-        run: |
-          set -a
-          source .vercel/.env.production.local
-          set +a
-          echo "Effective REDIS_URL: ${REDIS_URL:0:20}..."
-          vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Build Project Artifacts
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy Project Artifacts to Vercel
         run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
