@@ -3,6 +3,7 @@
 // 增强：自动重试 + 备选模型 + 回退图池
 // ============================================================
 import { NextResponse } from "next/server";
+import { createRateLimiter, retryAfterHeader } from "@/lib/ratelimit";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -224,7 +225,17 @@ async function generateImageWithRetry(
   throw new Error(lastError || "所有模型均失败");
 }
 
+// AI 生图：每 IP 每 60 秒最多 5 次（图片贵，限制更严）
+const imageLimiter = createRateLimiter({ limit: 5, windowMs: 60_000 });
+
 export async function POST(req: Request) {
+  const rl = await imageLimiter.check(req);
+  if (!rl.success) {
+    return new Response(null, {
+      status: 429,
+      headers: { "Retry-After": retryAfterHeader(rl.reset), "X-RateLimit-Limit": String(rl.total), "X-RateLimit-Remaining": String(rl.remaining) },
+    });
+  }
   const textCfg = resolveTextConfig(req);
   const imgCfg = resolveImageConfig(req);
   if (!imgCfg.key) {

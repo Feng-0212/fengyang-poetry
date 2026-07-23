@@ -115,3 +115,42 @@ export async function addCollectionApi(
   });
   return res.collection;
 }
+
+// ============================================================
+// 备份历史 & 批量 AI 标签
+// ================================================================
+
+export interface BackupSnapshot {
+  date: string;
+  poemCount: number;
+}
+
+export interface BatchTagResult {
+  total: number;
+  processed: number;
+  tagged: number;
+  skipped: number;
+  failed: number;
+  results: { poemId: string; title: string; tags: string[]; ok: boolean }[];
+}
+
+/** 获取快照历史列表 */
+export async function getBackupHistory(): Promise<BackupSnapshot[]> {
+  const res = await apiFetch<{ history: BackupSnapshot[] }>("/backup/history");
+  return res.history;
+}
+
+/** 下载指定日期的备份 JSON */
+export async function downloadBackup(date: string): Promise<{ poems: Poem[] }> {
+  return apiFetch<{ poems: Poem[] }>(`/backup/history?date=${date}&data=1`);
+}
+
+/** 触发批量 AI 打标签 */
+export async function runBatchAiTags(
+  poemIds?: string[]
+): Promise<BatchTagResult> {
+  return apiFetch<BatchTagResult>("/poems/batch-tags", {
+    method: "POST",
+    body: JSON.stringify({ poemIds }),
+  });
+}

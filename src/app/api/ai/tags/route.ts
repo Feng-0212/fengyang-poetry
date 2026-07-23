@@ -4,6 +4,7 @@
 // ============================================================
 import { NextResponse } from "next/server";
 import type { Poem } from "@/types/poem";
+import { createRateLimiter, retryAfterHeader } from "@/lib/ratelimit";
 
 // 预定义标签池（与 TagInput SUGGESTED 保持一致，可扩展）
 const TAG_POOL = [
@@ -71,7 +72,17 @@ function parseTags(raw: string): string[] {
     .slice(0, 3);
 }
 
+// AI 标签：每 IP 每 60 秒最多 15 次
+const tagsLimiter = createRateLimiter({ limit: 15, windowMs: 60_000 });
+
 export async function POST(req: Request) {
+  const rl = await tagsLimiter.check(req);
+  if (!rl.success) {
+    return new Response(null, {
+      status: 429,
+      headers: { "Retry-After": retryAfterHeader(rl.reset), "X-RateLimit-Limit": String(rl.total), "X-RateLimit-Remaining": String(rl.remaining) },
+    });
+  }
   const { key, baseUrl, model } = resolveConfig(req);
   if (!key) {
     return NextResponse.json(

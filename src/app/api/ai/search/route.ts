@@ -5,6 +5,7 @@
 import { NextResponse } from "next/server";
 import { Redis } from "@upstash/redis";
 import { cacheGet, cacheSet, hashKey } from "@/lib/kv";
+import { createRateLimiter, retryAfterHeader } from "@/lib/ratelimit";
 
 const redis = Redis.fromEnv();
 
@@ -53,7 +54,17 @@ function extractText(data: unknown): string {
     .trim();
 }
 
+// AI 语义搜索：每 IP 每 60 秒最多 10 次
+const searchLimiter = createRateLimiter({ limit: 10, windowMs: 60_000 });
+
 export async function POST(req: Request) {
+  const rl = await searchLimiter.check(req);
+  if (!rl.success) {
+    return new Response(null, {
+      status: 429,
+      headers: { "Retry-After": retryAfterHeader(rl.reset), "X-RateLimit-Limit": String(rl.total), "X-RateLimit-Remaining": String(rl.remaining) },
+    });
+  }
   const { key, baseUrl, model } = resolveConfig(req);
   if (!key) {
     return NextResponse.json(

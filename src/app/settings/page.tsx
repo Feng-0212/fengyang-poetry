@@ -26,6 +26,14 @@ import {
   clearAiConfig,
   type AiConfig,
 } from "@/lib/ai";
+import {
+  getBackupHistory,
+  downloadBackup,
+  runBatchAiTags,
+  type BatchTagResult,
+} from "@/lib/api";
+import BackupSection from "@/components/settings/BackupSection";
+import BatchTagSection from "@/components/settings/BatchTagSection";
 
 export default function SettingsPage() {
   const solarTerm = useSolarTerm();
@@ -609,6 +617,34 @@ export default function SettingsPage() {
               {seeding ? "添加中..." : "· 导入示例数据（7首） ·"}
             </button>
           </div>
+        </section>
+
+        {/* 备份与恢复 */}
+        <section className="mb-8 p-6 rounded-xl bg-white/60 border border-ink/8">
+          <h2 className="font-[var(--font-mashan)] text-lg text-ink-dark mb-2">
+            备份与恢复
+          </h2>
+          <p className="text-sm text-ink-light mb-4">
+            云端每日自动备份（保留30天快照），可查看历史或下载指定日期备份
+          </p>
+          <BackupSection
+            onNotify={(type, msg) => showNotification(type, msg)}
+          />
+        </section>
+
+        {/* AI 批量打标签 */}
+        <section className="mb-8 p-6 rounded-xl bg-white/60 border border-ink/8">
+          <h2 className="font-[var(--font-mashan)] text-lg text-ink-dark mb-2">
+            AI 批量打标签
+          </h2>
+          <p className="text-sm text-ink-light mb-4">
+            批量为所有诗词生成 AI 标签（每首 1-3 个）。已有标签的诗会跳过，避免覆盖
+          </p>
+          <BatchTagSection
+            poems={poems}
+            onNotify={(type, msg) => showNotification(type, msg)}
+            onDone={refresh}
+          />
         </section>
 
         {/* 标签管理 */}
