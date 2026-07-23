@@ -9,10 +9,16 @@ import { Redis } from "@upstash/redis";
 import { createHash } from "crypto";
 import { ProxyAgent, setGlobalDispatcher } from "undici";
 
-const PROXY = "http://127.0.0.1:7890";
-const SITE = "https://poetry-garden.vercel.app";
-const REDIS_URL = "https://epic-sunbird-181301.upstash.io";
-const REDIS_TOKEN = "gQAAAAAAAsQ1AAIgcDI2MWUyOGU1ZTk4NDE0MDJlODYxZTliMTkyYjAzYWE1Zg";
+// 敏感信息一律从环境变量读取，不硬编码（避免泄入 Git）：
+//   $env:UPSTASH_REDIS_REST_URL="https://..."; $env:UPSTASH_REDIS_REST_TOKEN="..."; node scripts/tts-pregen.mjs
+const PROXY = process.env.TTS_PROXY || "http://127.0.0.1:7890";
+const SITE = process.env.TTS_SITE || "https://poetry-garden.vercel.app";
+const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL || "";
+const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || "";
+if (!REDIS_URL || !REDIS_TOKEN) {
+  console.error("缺少 UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN 环境变量");
+  process.exit(1);
+}
 
 const VOICE = "zh-CN-YunxiNeural"; // 默认音色 yunxi
 const RATE = "-12%";               // 路由默认语速
