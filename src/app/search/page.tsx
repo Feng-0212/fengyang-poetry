@@ -7,13 +7,13 @@ import { Suspense, useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import Fuse from "fuse.js";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { getAllCollections } from "@/lib/db";
 import { getAllPoems as getAllPoemsApi } from "@/lib/api";
 import { getSolarTermMeta, getSeasonName } from "@/lib/solarterms";
 import { cn } from "@/lib/utils";
+import { useSearch } from "@/hooks/useSearch";
 import type { Poem, Collection, SeasonKey } from "@/types/poem";
 
 const SEASON_LABELS: Record<string, string> = {
@@ -65,6 +65,7 @@ function SearchContent() {
   const [selectedSeasons, setSelectedSeasons] = useState<Set<string>>(new Set());
   const [groupBy, setGroupBy] = useState<"collection" | "season" | "none">("collection");
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [useSemantic, setUseSemantic] = useState(false);
 
   // 加载数据（诗从云端 API，与设置页同步）
   useEffect(() => {
@@ -97,27 +98,16 @@ function SearchContent() {
     setRecentSearches(updated);
   }, []);
 
-  // Fuse 实例
-  const fuse = useMemo(
-    () =>
-      new Fuse(allPoems, {
-        keys: [
-          { name: "title", weight: 3 },
-          { name: "content", weight: 2 },
-          { name: "annotation", weight: 1 },
-        ],
-        threshold: 0.35,
-        ignoreLocation: true,
-        includeScore: true,
-      }),
-    [allPoems]
-  );
+  // 使用新的搜索 Hook（支持拼音 + 语义）
+  const { search, searchSemantic, semanticLoading, clearSemantic } = useSearch(allPoems);
 
   // 搜索结果
-  const matchedPoems = useMemo(() => {
+  const searchResults = useMemo(() => {
     if (!query.trim()) return [];
-    return fuse.search(query).map((r) => r.item);
-  }, [query, fuse]);
+    return search(query);
+  }, [query, search]);
+
+  const matchedPoems = useMemo(() => searchResults.map((r) => r.poem), [searchResults]);
 
   // 应用筛选
   const filteredPoems = useMemo(() => {
@@ -180,7 +170,15 @@ function SearchContent() {
   // 提交搜索（保存到历史）
   const handleSearch = (q: string) => {
     setQuery(q);
-    if (q.trim()) saveSearch(q);
+    if (q.trim()) {
+      saveSearch(q);
+      // 如果开启语义搜索，触发 AI 搜索
+      if (useSemantic) {
+        searchSemantic(q);
+      } else {
+        clearSemantic();
+      }
+    }
   };
 
   const hasFilters = selectedCollections.size > 0 || selectedSeasons.size > 0;
@@ -211,7 +209,7 @@ function SearchContent() {
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="搜索诗词标题、内容或注释..."
+                placeholder="搜索诗词标题、内容、拼音（如 jingyesi）..."
                 className="flex-1 bg-transparent border-none outline-none text-lg text-ink-dark placeholder:text-ink-light/40"
                 style={{ fontFamily: "var(--font-lxgw)" }}
                 autoFocus
@@ -223,6 +221,31 @@ function SearchContent() {
                   </svg>
                 </button>
               )}
+            </div>
+
+            {/* 语义搜索开关 */}
+            <div className="mb-4 flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setUseSemantic(!useSemantic);
+                  if (!useSemantic && query.trim()) {
+                    searchSemantic(query);
+                  } else {
+                    clearSemantic();
+                  }
+                }}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-xs transition-all",
+                  useSemantic
+                    ? "bg-cinnabar/10 text-cinnabar border border-cinnabar/20"
+                    : "bg-ink/5 text-ink-light border border-ink/10 hover:bg-ink/10"
+                )}
+              >
+                {semanticLoading ? "AI 搜索中..." : useSemantic ? "✓ 语义搜索已开启" : "开启 AI 语义搜索"}
+              </button>
+              <span className="text-xs text-ink-light/50">
+                （输入如「思乡」「写山的诗」，AI 理解意图后推荐）
+              </span>
             </div>
 
             {/* 搜索建议 */}

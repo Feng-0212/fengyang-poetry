@@ -15,6 +15,7 @@ const NAV_LINKS = [
   { href: "/yuan/sishi-moyuan", label: "四时墨苑" },
   { href: "/chain", label: "接龙" },
   { href: "/tags", label: "标签" },
+  { href: "/stats", label: "统计" },
   { href: "/search", label: "搜索" },
   { href: "/settings", label: "设置" },
 ];
