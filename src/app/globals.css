@@ -25,6 +25,35 @@
   /* 字体 */
   --font-lxgw: 'Noto Serif SC', 'STKaiti', 'KaiTi', serif;
   --font-mashan: 'Ma Shan Zheng', 'Noto Serif SC', serif;
+
+  /* 字号缩放（由 ThemeProvider 设置） */
+  --font-scale: 1;
+
+  /* 表面色（亮色） */
+  --bg: #F5F0E8;
+  --card-bg: rgba(255, 255, 255, 0.6);
+  --border: rgba(26, 26, 26, 0.08);
+  --navbar-bg: rgba(245, 240, 232, 0.85);
+}
+
+/* 暗色模式：覆盖核心色变量，var() 驱动的样式自动适配 */
+[data-theme="dark"] {
+  --color-rice: #16140F;
+  --color-ink-dark: #ECE5D8;
+  --color-ink: #C9C0B0;
+  --color-ink-light: #908779;
+  --color-cinnabar: #E0705F;
+  --color-gold: #D4AF37;
+
+  --bg: #16140F;
+  --card-bg: rgba(40, 37, 30, 0.7);
+  --border: rgba(255, 255, 255, 0.1);
+  --navbar-bg: rgba(22, 20, 15, 0.85);
+}
+
+/* 字号调节：缩放根字号（Tailwind 文本尺寸多为 rem，随之缩放） */
+html {
+  font-size: calc(100% * var(--font-scale));
 }
 
 /* 基础重置 */
@@ -39,17 +68,18 @@ html {
 }
 
 body {
-  background-color: var(--color-rice);
+  background-color: var(--bg);
   color: var(--color-ink-dark);
   font-family: var(--font-lxgw);
   line-height: 1.9;
   min-height: 100vh;
   overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* 宣纸纹理背景 */
 .paper-texture {
-  background-color: #F5F0E8;
+  background-color: var(--bg);
   background-image:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
   background-repeat: repeat;
@@ -128,15 +158,15 @@ body {
   left: 0;
   right: 0;
   z-index: 100;
-  background: rgba(245, 240, 232, 0.85);
+  background: var(--navbar-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(26, 26, 26, 0.06);
+  border-bottom: 1px solid var(--border);
   transition: background 0.3s ease;
 }
 
 .navbar:hover {
-  background: rgba(245, 240, 232, 0.95);
+  background: var(--navbar-bg);
 }
 
 /* 链接样式 */
@@ -398,8 +428,8 @@ body {
 
 /* 卡片样式 */
 .poem-card {
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(26, 26, 26, 0.08);
+  background: var(--card-bg);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 24px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -447,12 +477,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(26, 26, 26, 0.15);
+  background: var(--border);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(26, 26, 26, 0.25);
+  background: var(--color-ink-light);
 }
 
 /* 选中颜色 */
@@ -460,6 +490,45 @@ body {
   background: rgba(193, 74, 63, 0.2);
   color: var(--color-ink-dark);
 }
+
+/* ============================================================
+   暗色模式（[data-theme="dark"] 时生效）
+   ============================================================ */
+[data-theme="dark"] body {
+  color: var(--color-ink-dark);
+}
+
+/* 覆盖常用 Tailwind 工具类，使暗色模式下卡片/文本自动适配 */
+[data-theme="dark"] .bg-white {
+  background-color: var(--card-bg);
+}
+
+[data-theme="dark"] .border-ink\/10 {
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .text-ink-light {
+  color: var(--color-ink-light);
+}
+
+[data-theme="dark"] .bg-ink\/5 {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .bg-ink\/8 {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .shadow-xl,
+[data-theme="dark"] .shadow-2xl {
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .annotation-area {
+  border-left-color: var(--color-cinnabar);
+  color: var(--color-ink-light);
+}
+
 
 /* 焦点样式 */
 :focus-visible {

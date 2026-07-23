@@ -11,10 +11,13 @@ import { useAllPoems } from "@/hooks/usePoem";
 import { useSolarTerm } from "@/hooks/useSolarTerm";
 import { importData, getAllCollections } from "@/lib/db";
 import { addPoem as addPoemApi, getAllPoems } from "@/lib/api";
+import type { Poem } from "@/types/poem";
 import { downloadFile, formatDate, cn } from "@/lib/utils";
+import { exportMarkdown, printPoems } from "@/lib/export";
 import { motion, AnimatePresence } from "framer-motion";
 import { SOLAR_TERMS_META } from "@/lib/solarterms";
 import { usePasswordGate } from "@/components/auth/PasswordGate";
+import { useTheme } from "@/components/theme/ThemeProvider";
 import dynamic from "next/dynamic";
 const TagManager = dynamic(() => import("@/components/settings/TagManager"));
 import {
@@ -137,7 +140,53 @@ export default function SettingsPage() {
     }
   };
 
-  // 触发文件选择
+  // 导出 Markdown（做自己的诗集）
+  const handleExportMD = async () => {
+    if (poems.length === 0) {
+      showNotification("info", "还没有诗词可导出");
+      return;
+    }
+    setExporting(true);
+    try {
+      const data = await getAllPoems();
+      const collections = await getAllCollections();
+      exportMarkdown(
+        data as unknown as Poem[],
+        "墨韵阁诗词集",
+        collections.map((c) => ({ id: c.id, name: c.name }))
+      );
+      showNotification("success", `已导出 ${data.length} 首诗词为 Markdown`);
+    } catch (e) {
+      showNotification("error", "导出失败");
+      console.error(e);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  // 打印 / 导出 PDF
+  const handleExportPDF = async () => {
+    if (poems.length === 0) {
+      showNotification("info", "还没有诗词可导出");
+      return;
+    }
+    setExporting(true);
+    try {
+      const data = await getAllPoems();
+      const collections = await getAllCollections();
+      printPoems(
+        data as unknown as Poem[],
+        "墨韵阁诗词集",
+        collections.map((c) => ({ id: c.id, name: c.name }))
+      );
+      showNotification("success", "已打开打印窗口，选择「另存为 PDF」即可");
+    } catch (e) {
+      showNotification("error", "导出失败");
+      console.error(e);
+    } finally {
+      setExporting(false);
+    }
+  };
   const handleImportClick = () => {
     fileInputRef.current?.click();
   };
@@ -260,6 +309,9 @@ export default function SettingsPage() {
           </p>
         </div>
 
+        {/* 外观设置 */}
+        <AppearanceSettings />
+
         {/* AI 设置 */}
         <section className="mb-8 p-6 rounded-xl bg-white/60 border border-ink/8">
           <h2 className="font-[var(--font-mashan)] text-lg text-ink-dark mb-2">
@@ -381,6 +433,66 @@ export default function SettingsPage() {
             建议定期导出备份，避免清除浏览器数据后丢失
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              onClick={handleExportMD}
+              disabled={exporting}
+              className="p-4 rounded-lg border border-ink/10 hover:border-cinnabar/40 hover:bg-cinnabar/5 transition-all text-left group"
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded bg-cinnabar/10 flex items-center justify-center text-cinnabar">
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-ink-dark group-hover:text-cinnabar">
+                    导出 Markdown
+                  </div>
+                  <div className="text-xs text-ink-light">做自己的诗集（含赏析）</div>
+                </div>
+              </div>
+            </button>
+
+            <button
+              onClick={handleExportPDF}
+              disabled={exporting}
+              className="p-4 rounded-lg border border-ink/10 hover:border-cinnabar/40 hover:bg-cinnabar/5 transition-all text-left group"
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded bg-blue-500/10 flex items-center justify-center text-blue-500">
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-ink-dark group-hover:text-cinnabar">
+                    打印 / 导出 PDF
+                  </div>
+                  <div className="text-xs text-ink-light">排版精美，可存为 PDF</div>
+                </div>
+              </div>
+            </button>
+
             <button
               onClick={handleExportJSON}
               disabled={exporting}
@@ -649,5 +761,91 @@ function StatBox({
       </div>
       <div className="text-xs text-ink-light mt-1">{label}</div>
     </div>
+  );
+}
+
+// ============================================================
+// 外观设置（暗色模式 + 字号调节）
+// ============================================================
+function AppearanceSettings() {
+  const { theme, resolvedTheme, fontSize, setTheme, setFontSize } = useTheme();
+  const themeOptions: { value: "light" | "dark" | "system"; label: string; icon: string }[] = [
+    { value: "light", label: "亮色", icon: "☀️" },
+    { value: "dark", label: "暗色", icon: "🌙" },
+    { value: "system", label: "跟随系统", icon: "🖥️" },
+  ];
+
+  return (
+    <section className="mb-8 p-6 rounded-xl bg-white/60 border border-ink/8">
+      <h2 className="font-[var(--font-mashan)] text-lg text-ink-dark mb-2">
+        外观
+      </h2>
+      <p className="text-sm text-ink-light mb-4 leading-relaxed">
+        夜间读诗更护眼，字号随心调整。设置会保存在本设备。
+      </p>
+
+      {/* 主题选择 */}
+      <div className="mb-5">
+        <div className="text-xs text-ink-light mb-2">主题模式</div>
+        <div className="flex gap-2">
+          {themeOptions.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setTheme(opt.value)}
+              className={cn(
+                "flex-1 py-2.5 rounded-lg text-sm border transition-all",
+                theme === opt.value
+                  ? "border-cinnabar/40 bg-cinnabar/10 text-cinnabar"
+                  : "border-ink/10 text-ink-light hover:border-ink/20"
+              )}
+            >
+              <span className="mr-1">{opt.icon}</span>
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 字号调节 */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs text-ink-light">字号</span>
+          <span className="text-xs text-ink-light">
+            {Math.round(fontSize * 100)}%
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setFontSize(fontSize - 0.1)}
+            disabled={fontSize <= 0.85}
+            className="w-9 h-9 rounded-lg border border-ink/10 text-ink-light hover:border-ink/20 disabled:opacity-30 text-lg leading-none"
+          >
+            A-
+          </button>
+          <input
+            type="range"
+            min={0.85}
+            max={1.4}
+            step={0.05}
+            value={fontSize}
+            onChange={(e) => setFontSize(parseFloat(e.target.value))}
+            className="flex-1 accent-cinnabar"
+          />
+          <button
+            onClick={() => setFontSize(fontSize + 0.1)}
+            disabled={fontSize >= 1.4}
+            className="w-9 h-9 rounded-lg border border-ink/10 text-ink-light hover:border-ink/20 disabled:opacity-30 text-lg leading-none"
+          >
+            A+
+          </button>
+          <button
+            onClick={() => setFontSize(1)}
+            className="px-2 h-9 rounded-lg border border-ink/10 text-ink-light hover:border-ink/20 text-xs"
+          >
+            重置
+          </button>
+        </div>
+      </div>
+    </section>
   );
 }

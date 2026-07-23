@@ -66,6 +66,12 @@ export default function RootLayout({
           rel="icon"
           href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23C14A3F'/><text x='16' y='23' text-anchor='middle' font-size='20' fill='white' font-family='serif'>墨</text></svg>"
         />
+        {/* 防止暗色模式闪烁：在 hydration 前应用主题 */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('moyun-theme')||'system';var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.setAttribute('data-theme',d?'dark':'light');var f=parseFloat(localStorage.getItem('moyun-font-scale')||'1')||1;document.documentElement.style.setProperty('--font-scale',String(f));}catch(e){}})();`,
+          }}
+        />
       </head>
       <body className="paper-texture antialiased">
         <ErrorBoundary>

@@ -1,10 +1,10 @@
 // ============================================================
 // 搜索 Hook（支持拼音 + 语义搜索）
 // ============================================================
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import Fuse from "fuse.js";
 import type { Poem } from "@/types/poem";
-import { matchWithPinyin, pinyinMatchScore } from "@/lib/pinyin";
+import { matchWithPinyin, pinyinMatchScore, ensurePinyin } from "@/lib/pinyin";
 
 interface SearchResult {
   poem: Poem;
@@ -22,6 +22,11 @@ interface SearchResult {
 export function useSearch(poems: Poem[]) {
   const [semanticResults, setSemanticResults] = useState<string[]>([]);
   const [semanticLoading, setSemanticLoading] = useState(false);
+
+  // 预加载拼音库（不阻塞首屏渲染）
+  useEffect(() => {
+    ensurePinyin();
+  }, []);
 
   // Fuse 实例（文本搜索）
   const fuse = useMemo(

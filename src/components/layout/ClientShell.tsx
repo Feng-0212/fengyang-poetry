@@ -6,6 +6,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import SearchModal from "@/components/search/SearchModal";
 import { PasswordProvider } from "@/components/auth/PasswordGate";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
 
 interface SearchContextType {
   openSearch: () => void;
@@ -45,6 +46,7 @@ export default function ClientShell({ children }: { children: ReactNode }) {
 
   return (
     <PasswordProvider>
+    <ThemeProvider>
     <SearchContext.Provider
       value={{
         openSearch: () => setIsSearchOpen(true),
@@ -58,6 +60,7 @@ export default function ClientShell({ children }: { children: ReactNode }) {
         onClose={() => setIsSearchOpen(false)}
       />
     </SearchContext.Provider>
+    </ThemeProvider>
   </PasswordProvider>
 );
 }
