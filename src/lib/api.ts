@@ -22,6 +22,12 @@ async function apiFetch<T>(
     headers,
     ...init
   });
+  // 每次写操作后清除本地存储的密码，下次必须重新输入
+  if (init?.method && !["GET", "HEAD", "OPTIONS"].includes(init.method)) {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(PASSWORD_KEY);
+    }
+  }
   if (!res.ok) {
     // 401 = 密码错误，抛特定错误让前端弹窗重输
     if (res.status === 401) {
