@@ -1,8 +1,9 @@
 // ============================================================
 // API: 藏操作（DELETE 整个藏及其诗词）
 // ============================================================
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import type { Poem, Collection } from "@/types/poem";
+import { checkPassword } from "@/lib/auth";
 
 async function getKv() {
   try {
@@ -50,9 +51,12 @@ async function setCollections(cols: Collection[]): Promise<void> {
 }
 
 export async function DELETE(
-  _req: Request,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authErr = checkPassword(req);
+  if (authErr) return authErr;
+
   const { id } = await params;
   // 删除该藏下所有诗词
   let poems = await getPoems();

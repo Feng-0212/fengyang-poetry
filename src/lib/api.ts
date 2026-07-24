@@ -2,15 +2,36 @@
 // 服务端 API 客户端 — 共享数据层
 // ============================================================
 import type { Poem, Collection } from "@/types/poem";
+import { PASSWORD_KEY } from "./auth";
 
 const BASE = "/api";
 
-async function apiFetch<T>(url: string, init?: RequestInit): Promise<T> {
+async function apiFetch<T>(
+  url: string,
+  init?: RequestInit & { requireAuth?: boolean }
+): Promise<T> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json"
+  };
+  // 写操作自动带上密码 header（从 localStorage 读）
+  if (init?.requireAuth && typeof window !== "undefined") {
+    const pw = localStorage.getItem(PASSWORD_KEY) || "";
+    if (pw) headers["x-poem-password"] = pw;
+  }
   const res = await fetch(`${BASE}${url}`, {
-    headers: { "Content-Type": "application/json" },
-    ...init,
+    headers,
+    ...init
   });
-  if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`);
+  if (!res.ok) {
+    // 401 = 密码错误，抛特定错误让前端弹窗重输
+    if (res.status === 401) {
+      const body = await res.json().catch(() => ({}));
+      const err = new Error(body.message || "密码错误或未提供");
+      (err as any).status = 401;
+      throw err;
+    }
+    throw new Error(`API ${res.status}: ${res.statusText}`);
+  }
   return res.json();
 }
 
@@ -24,7 +45,8 @@ export async function addPoem(
 ): Promise<string> {
   const res = await apiFetch<{ id: string; poem: Poem }>("/poems", {
     method: "POST",
-    body: JSON.stringify(data),
+    requireAuth: true,
+    body: JSON.stringify(data)
   });
   return res.id;
 }
@@ -47,12 +69,13 @@ export async function restorePoem(id: string): Promise<void> {
   await apiFetch(`/poem/${id}`, {
     method: "PUT",
     body: JSON.stringify({ deletedAt: null }),
+    requireAuth: true
   });
 }
 
 /** 永久删除诗词（从 Redis 物理删除） */
 export async function permanentlyDeletePoem(id: string): Promise<void> {
-  await apiFetch(`/poem/${id}?permanent=1`, { method: "DELETE" });
+  await apiFetch(`/poem/${id}?permanent=1`, { method: "DELETE", requireAuth: true });
 }
 
 /** 获取单首诗词 */
@@ -73,12 +96,13 @@ export async function updatePoem(
   await apiFetch(`/poem/${id}`, {
     method: "PUT",
     body: JSON.stringify(changes),
+    requireAuth: true
   });
 }
 
 /** 删除诗词（软删除） */
 export async function deletePoem(id: string): Promise<void> {
-  await apiFetch(`/poem/${id}`, { method: "DELETE" });
+  await apiFetch(`/poem/${id}`, { method: "DELETE", requireAuth: true });
 }
 
 /** 收藏切换 */
@@ -89,14 +113,14 @@ export async function toggleFavorite(id: string): Promise<void> {
       isFavorite: !poem.isFavorite,
       favoriteCount: poem.isFavorite
         ? Math.max(0, (poem.favoriteCount || 1) - 1)
-        : (poem.favoriteCount || 0) + 1,
+        : (poem.favoriteCount || 0) + 1
     });
   }
 }
 
 /** 删除藏（云端删除该藏下所有诗词） */
 export async function deleteCollectionApi(id: string): Promise<void> {
-  await apiFetch(`/collection/${id}`, { method: "DELETE" });
+  await apiFetch(`/collection/${id}`, { method: "DELETE", requireAuth: true });
 }
 
 /** 获取云端藏列表 */
@@ -111,7 +135,8 @@ export async function addCollectionApi(
 ): Promise<Collection> {
   const res = await apiFetch<{ collection: Collection }>("/collection", {
     method: "POST",
-    body: JSON.stringify(data),
+    requireAuth: true,
+    body: JSON.stringify(data)
   });
   return res.collection;
 }
@@ -151,6 +176,7 @@ export async function runBatchAiTags(
 ): Promise<BatchTagResult> {
   return apiFetch<BatchTagResult>("/poems/batch-tags", {
     method: "POST",
-    body: JSON.stringify({ poemIds }),
+    requireAuth: true,
+    body: JSON.stringify({ poemIds })
   });
 }

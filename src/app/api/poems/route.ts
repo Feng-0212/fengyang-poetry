@@ -1,8 +1,9 @@
 // ============================================================
 // API: 诗词 CRUD（Upstash Redis 持久化）
 // ============================================================
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import type { Poem } from "@/types/poem";
+import { checkPassword } from "@/lib/auth";
 
 async function getKv() {
   try {
@@ -57,7 +58,11 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  // 密码校验
+  const authErr = checkPassword(req);
+  if (authErr) return authErr;
+
   try {
     const body = await req.json();
     const now = Date.now();

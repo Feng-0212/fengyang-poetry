@@ -1,8 +1,9 @@
 // ============================================================
 // API: 单首诗词（GET / PUT / DELETE）
 // ============================================================
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import type { Poem } from "@/types/poem";
+import { checkPassword } from "@/lib/auth";
 
 async function getKv() {
   try {
@@ -59,9 +60,12 @@ export async function GET(
 }
 
 export async function PUT(
-  req: Request,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authErr = checkPassword(req);
+  if (authErr) return authErr;
+
   const { id } = await params;
   const body = await req.json();
   const poems = await getPoems();
@@ -74,9 +78,12 @@ export async function PUT(
 }
 
 export async function DELETE(
-  req: Request,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authErr = checkPassword(req);
+  if (authErr) return authErr;
+
   const { id } = await params;
   const poems = await getPoems();
   const idx = poems.findIndex((p) => p.id === id);

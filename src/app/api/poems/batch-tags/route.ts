@@ -4,8 +4,9 @@
 // 对每首诗调用 AI 标签接口，成功后更新 tags 字段
 // 返回：{ total, processed, failed, results }
 // ============================================================
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import type { Poem } from "@/types/poem";
+import { checkPassword } from "@/lib/auth";
 
 const KV_KEY = "poems:all";
 const MAX_CONCURRENT = 3; // 同时并发 AI 请求数
@@ -149,7 +150,10 @@ async function processWithConcurrency<T, R>(
   return results;
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const authErr = checkPassword(req);
+  if (authErr) return authErr;
+
   try {
     const body = await req.json().catch(() => ({}));
     const targetIds: string[] | undefined = Array.isArray(body.poemIds)

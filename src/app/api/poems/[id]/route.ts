@@ -2,8 +2,9 @@
 // API: 单首诗局部更新（PATCH /api/poems/[id]）
 // 用于：AI 自动打标签后的 tags 更新
 // ============================================================
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import type { Poem } from "@/types/poem";
+import { checkPassword } from "@/lib/auth";
 
 const KV_KEY = "poems:all";
 
@@ -47,9 +48,12 @@ async function setPoems(poems: Poem[]): Promise<void> {
 
 // PATCH /api/poems/[id] — 局部更新，返回更新后的 poem
 export async function PATCH(
-  req: Request,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authErr = checkPassword(req);
+  if (authErr) return authErr;
+
   try {
     const { id } = await params;
     const body = await req.json();
