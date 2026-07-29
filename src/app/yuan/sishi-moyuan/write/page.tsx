@@ -51,34 +51,36 @@ export default function WritePage() {
     SOLAR_TERMS_META.find((st) => st.key === selectedSolarTerm) ?? solarTerm;
 
   const handleSubmit = useCallback(async () => {
-    if (!title.trim()) { setError("请输入诗词标题"); return; }
-    if (!content.trim()) { setError("请输入诗词正文"); return; }
+    requirePassword(async (password: string) => {
+      if (!title.trim()) { setError("请输入诗词标题"); return; }
+      if (!content.trim()) { setError("请输入诗词正文"); return; }
 
-    setSaving(true);
-    setError("");
-    try {
-      await addPoem({
-        collectionId: COLLECTION_IDS.SISHI_MOYUAN,
-        title: title.trim(),
-        content: content.trim(),
-        season: selectedSeason,
-        solarTerm: selectedSolarTerm as any,
-        annotation: annotation.trim() || undefined,
-        tags,
-        author: author.trim() || "佚名",
-        dynasty: dynasty.trim() || "佚名",
-        isFavorite: false,
-        favoriteCount: 0,
-      });
-      setSaved(true);
-      setTimeout(() => router.push("/yuan/sishi-moyuan"), 1500);
-    } catch (e) {
-      setError("保存失败，请重试");
-      console.error(e);
-    } finally {
-      setSaving(false);
-    }
-  }, [title, author, dynasty, content, annotation, tags, selectedSeason, selectedSolarTerm, router]);
+      setSaving(true);
+      setError("");
+      try {
+        await addPoem({
+          collectionId: COLLECTION_IDS.SISHI_MOYUAN,
+          title: title.trim(),
+          content: content.trim(),
+          season: selectedSeason,
+          solarTerm: selectedSolarTerm as any,
+          annotation: annotation.trim() || undefined,
+          tags,
+          author: author.trim() || "佚名",
+          dynasty: dynasty.trim() || "佚名",
+          isFavorite: false,
+          favoriteCount: 0,
+        }, password);
+        setSaved(true);
+        setTimeout(() => router.push("/yuan/sishi-moyuan"), 1500);
+      } catch (e) {
+        setError("保存失败，请重试");
+        console.error(e);
+      } finally {
+        setSaving(false);
+      }
+    });
+  }, [title, author, dynasty, content, annotation, tags, selectedSeason, selectedSolarTerm, router, requirePassword]);
 
   return (
     <div className="paper-texture min-h-screen">

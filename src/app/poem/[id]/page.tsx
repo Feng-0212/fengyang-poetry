@@ -99,9 +99,9 @@ export default function PoemDetailPage({ params }: Props) {
     }, []);
 
   const handleDelete = async () => {
-    await requirePassword(async () => {
+    requirePassword(async (password: string) => {
       if (confirm("确定要删除这首诗词吗？")) {
-        await deletePoem(poem.id);
+        await deletePoem(poem.id, password);
         router.push(backHref);
       }
     });

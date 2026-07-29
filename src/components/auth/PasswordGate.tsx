@@ -1,19 +1,18 @@
 // ============================================================
 // 密码门 — 写诗/改诗/删诗操作保护
-// 优先从环境变量 NEXT_PUBLIC_POEM_PASSWORD 读取
-// （避免明文出现在 Git 仓库中，请勿提交 .env.local）
-// fallback：环境变量未设时使用默认 zsklj
+// 密码仅在服务端验证，前端仅收集用户输入
+// 环境变量：POEM_PASSWORD（服务端专用，不会打包到前端）
 // ============================================================
 "use client";
 
 import { useState, createContext, useContext, useCallback, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const PASSWORD = process.env.NEXT_PUBLIC_POEM_PASSWORD || "zsklj";
+// 前端不存储密码，由服务端校验
 
 interface AuthCtx {
   authenticated: boolean;
-  requirePassword: (action: () => void) => void;
+  requirePassword: (action: (password: string) => void) => void;
 }
 
 const AuthContext = createContext<AuthCtx>({
@@ -27,28 +26,26 @@ export function usePasswordGate() {
 
 export function PasswordProvider({ children }: { children: ReactNode }) {
   const [showPrompt, setShowPrompt] = useState(false);
-  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+  const [pendingAction, setPendingAction] = useState<((password: string) => void) | null>(null);
   const [error, setError] = useState("");
 
   // 每次操作都要求输入密码（不缓存认证状态）
-  const requirePassword = useCallback((action: () => void) => {
+  const requirePassword = useCallback((action: (password: string) => void) => {
     setPendingAction(() => action);
     setShowPrompt(true);
     setError("");
   }, []);
 
+  // 密码校验交给服务端，前端仅传递输入
   const verifyPassword = useCallback((pw: string) => {
-    if (pw === PASSWORD) {
-      setShowPrompt(false);
-      const act = pendingAction;
-      setPendingAction(null);
-      if (act) {
-        setTimeout(() => act(), 50);
-      }
-      return true;
+    // 将密码传给 pendingAction，由具体操作函数带上 header 发到服务端校验
+    setShowPrompt(false);
+    const act = pendingAction;
+    setPendingAction(null);
+    if (act) {
+      // 通过闭包传递密码
+      (act as (pw: string) => void)(pw);
     }
-    setError("密码错误");
-    return false;
   }, [pendingAction]);
 
   const cancel = useCallback(() => {

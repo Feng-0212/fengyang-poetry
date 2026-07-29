@@ -219,7 +219,7 @@ export default function SettingsPage() {
         throw new Error("文件格式不正确");
       }
 
-      // 走 API 导入（云端持久化）
+      // 走 API 导入（云端持久化，需密码）
       const cols = await getAllCollections();
       const colBySlug: Record<string, string> = {};
       cols.forEach((c) => (colBySlug[c.slug] = c.id));
@@ -240,7 +240,7 @@ export default function SettingsPage() {
           dynasty: p.dynasty || "佚名",
           isFavorite: !!p.isFavorite,
           favoriteCount: p.isFavorite ? 1 : 0,
-        });
+        }); // 密码通过 localStorage 自动读取（用户已输入）
         count++;
       }
       await refresh();
@@ -257,7 +257,7 @@ export default function SettingsPage() {
 
   // 导入示例数据
   const handleSeed = async () => {
-    await requirePassword(async () => {
+    requirePassword(async (password: string) => {
       setSeeding(true);
       try {
         const cols = await getAllCollections();
@@ -288,7 +288,7 @@ export default function SettingsPage() {
             dynasty: s.dynasty,
             isFavorite: false,
             favoriteCount: 0,
-          });
+          }, password);
           count++;
         }
         await refresh();

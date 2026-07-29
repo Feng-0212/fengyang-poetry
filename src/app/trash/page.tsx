@@ -45,29 +45,33 @@ export default function TrashPage() {
 
   useEffect(() => { loadTrash(); }, [loadTrash]);
 
-  const handleRestore = useCallback(async (id: string) => {
-    await restorePoem(id);
+  const handleRestore = useCallback(async (id: string, password: string) => {
+    await restorePoem(id, password);
     await loadTrash();
   }, [loadTrash]);
 
   const handleRestoreWithPassword = useCallback((id: string) => {
-    requirePassword(() => handleRestore(id));
+    requirePassword((password: string) => handleRestore(id, password));
   }, [requirePassword, handleRestore]);
 
   const handleBatchRestoreWithPassword = useCallback(() => {
     if (selected.size === 0) return;
     if (!confirm(`确定要恢复选中的 ${selected.size} 首诗词吗？`)) return;
-    requirePassword(async () => {
-      for (const id of selected) await restorePoem(id);
+    requirePassword(async (password: string) => {
+      for (const id of selected) await restorePoem(id, password);
       setSelected(new Set()); setSelectMode(false); await loadTrash();
     });
   }, [requirePassword, selected, loadTrash]);
 
-  const handlePermanentDelete = useCallback(async (id: string) => {
+  const handlePermanentDelete = useCallback(async (id: string, password: string) => {
     if (!confirm("确定要永久删除这首诗词吗？此操作不可恢复。")) return;
-    await permanentlyDeletePoem(id);
+    await permanentlyDeletePoem(id, password);
     await loadTrash();
   }, [loadTrash]);
+
+  const handlePermanentDeleteWithPassword = useCallback((id: string) => {
+    requirePassword((password: string) => handlePermanentDelete(id, password));
+  }, [requirePassword, handlePermanentDelete]);
 
   const toggleSelect = (id: string) => {
     const newSet = new Set(selected);
@@ -77,10 +81,12 @@ export default function TrashPage() {
 
   const handleBatchRestore = handleBatchRestoreWithPassword;
 
-  const handleBatchDelete = async () => {
+  const handleBatchDelete = () => {
     if (!confirm(`确定要永久删除选中的 ${selected.size} 首诗词吗？此操作不可恢复！`)) return;
-    for (const id of selected) await permanentlyDeletePoem(id);
-    setSelected(new Set()); setSelectMode(false); await loadTrash();
+    requirePassword(async (password: string) => {
+      for (const id of selected) await permanentlyDeletePoem(id, password);
+      setSelected(new Set()); setSelectMode(false); await loadTrash();
+    });
   };
 
   return (
@@ -147,7 +153,7 @@ export default function TrashPage() {
                     selected={selected.has(poem.id)}
                     onToggleSelect={() => toggleSelect(poem.id)}
                     onRestore={() => handleRestoreWithPassword(poem.id)}
-                    onDelete={() => requirePassword(() => handlePermanentDelete(poem.id))}
+                    onDelete={() => handlePermanentDeleteWithPassword(poem.id)}
                   />
                 ))}
               </AnimatePresence>

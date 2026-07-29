@@ -56,35 +56,37 @@ export default function CollectionWritePage({ params }: Props) {
   );
 
   const doSave = useCallback(async () => {
-    if (!title.trim()) { setError("请输入诗词标题"); return; }
-    if (!content.trim()) { setError("请输入诗词正文"); return; }
-    if (!collection) { setError("藏不存在"); return; }
+    requirePassword(async (password: string) => {
+      if (!title.trim()) { setError("请输入诗词标题"); return; }
+      if (!content.trim()) { setError("请输入诗词正文"); return; }
+      if (!collection) { setError("藏不存在"); return; }
 
-    setSaving(true);
-    setError("");
-    try {
-      await addPoem({
-        collectionId: collection.id,
-        title: title.trim(),
-        content: content.trim(),
-        season: selectedSeason,
-        solarTerm: selectedSolarTerm as any,
-        annotation: annotation.trim() || undefined,
-        tags,
-        author: author.trim() || "佚名",
-        dynasty: dynasty.trim() || "佚名",
-        isFavorite: false,
-        favoriteCount: 0,
-      });
-      setSaved(true);
-      setTimeout(() => router.push(`/yuan/${slug}`), 1500);
-    } catch (e) {
-      setError("保存失败，请重试");
-      console.error(e);
-    } finally {
-      setSaving(false);
-    }
-  }, [title, author, dynasty, content, annotation, tags, selectedSeason, selectedSolarTerm, collection, slug, router]);
+      setSaving(true);
+      setError("");
+      try {
+        await addPoem({
+          collectionId: collection.id,
+          title: title.trim(),
+          content: content.trim(),
+          season: selectedSeason,
+          solarTerm: selectedSolarTerm as any,
+          annotation: annotation.trim() || undefined,
+          tags,
+          author: author.trim() || "佚名",
+          dynasty: dynasty.trim() || "佚名",
+          isFavorite: false,
+          favoriteCount: 0,
+        }, password);
+        setSaved(true);
+        setTimeout(() => router.push(`/yuan/${slug}`), 1500);
+      } catch (e) {
+        setError("保存失败，请重试");
+        console.error(e);
+      } finally {
+        setSaving(false);
+      }
+    });
+  }, [title, author, dynasty, content, annotation, tags, selectedSeason, selectedSolarTerm, collection, slug, router, requirePassword]);
 
   const handleSubmit = useCallback(() => {
     requirePassword(doSave);

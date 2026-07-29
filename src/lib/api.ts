@@ -2,32 +2,29 @@
 // 服务端 API 客户端 — 共享数据层
 // ============================================================
 import type { Poem, Collection } from "@/types/poem";
-import { PASSWORD_KEY } from "./auth";
 
 const BASE = "/api";
 
+/**
+ * 统一 API 调用封装
+ * @param password 可选密码，用于写操作鉴权（服务端校验）
+ */
 async function apiFetch<T>(
   url: string,
-  init?: RequestInit & { requireAuth?: boolean }
+  init?: RequestInit & { requireAuth?: boolean; password?: string }
 ): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json"
   };
-  // 写操作自动带上密码 header（从 localStorage 读）
+  // 写操作带上密码 header（优先用传入的，其次从 localStorage 读）
   if (init?.requireAuth && typeof window !== "undefined") {
-    const pw = localStorage.getItem(PASSWORD_KEY) || "";
+    const pw = init.password || localStorage.getItem("poem_password") || "";
     if (pw) headers["x-poem-password"] = pw;
   }
   const res = await fetch(`${BASE}${url}`, {
     headers,
     ...init
   });
-  // 每次写操作后清除本地存储的密码，下次必须重新输入
-  if (init?.method && !["GET", "HEAD", "OPTIONS"].includes(init.method)) {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(PASSWORD_KEY);
-    }
-  }
   if (!res.ok) {
     // 401 = 密码错误，抛特定错误让前端弹窗重输
     if (res.status === 401) {
@@ -47,11 +44,13 @@ async function apiFetch<T>(
 
 /** 创建诗词 */
 export async function addPoem(
-  data: Omit<Poem, "id" | "createdAt" | "updatedAt">
+  data: Omit<Poem, "id" | "createdAt" | "updatedAt">,
+  password?: string
 ): Promise<string> {
   const res = await apiFetch<{ id: string; poem: Poem }>("/poems", {
     method: "POST",
     requireAuth: true,
+    password,
     body: JSON.stringify(data)
   });
   return res.id;
@@ -71,17 +70,18 @@ export async function getAllPoemsIncludingDeleted(): Promise<Poem[]> {
 }
 
 /** 恢复软删除的诗词 */
-export async function restorePoem(id: string): Promise<void> {
+export async function restorePoem(id: string, password?: string): Promise<void> {
   await apiFetch(`/poem/${id}`, {
     method: "PUT",
     body: JSON.stringify({ deletedAt: null }),
-    requireAuth: true
+    requireAuth: true,
+    password
   });
 }
 
 /** 永久删除诗词（从 Redis 物理删除） */
-export async function permanentlyDeletePoem(id: string): Promise<void> {
-  await apiFetch(`/poem/${id}?permanent=1`, { method: "DELETE", requireAuth: true });
+export async function permanentlyDeletePoem(id: string, password?: string): Promise<void> {
+  await apiFetch(`/poem/${id}?permanent=1`, { method: "DELETE", requireAuth: true, password });
 }
 
 /** 获取单首诗词 */
@@ -97,18 +97,20 @@ export async function getPoem(id: string): Promise<Poem | null> {
 /** 更新诗词 */
 export async function updatePoem(
   id: string,
-  changes: Partial<Poem>
+  changes: Partial<Poem>,
+  password?: string
 ): Promise<void> {
   await apiFetch(`/poem/${id}`, {
     method: "PUT",
     body: JSON.stringify(changes),
-    requireAuth: true
+    requireAuth: true,
+    password
   });
 }
 
 /** 删除诗词（软删除） */
-export async function deletePoem(id: string): Promise<void> {
-  await apiFetch(`/poem/${id}`, { method: "DELETE", requireAuth: true });
+export async function deletePoem(id: string, password?: string): Promise<void> {
+  await apiFetch(`/poem/${id}`, { method: "DELETE", requireAuth: true, password });
 }
 
 /** 收藏切换 */
@@ -125,8 +127,8 @@ export async function toggleFavorite(id: string): Promise<void> {
 }
 
 /** 删除藏（云端删除该藏下所有诗词） */
-export async function deleteCollectionApi(id: string): Promise<void> {
-  await apiFetch(`/collection/${id}`, { method: "DELETE", requireAuth: true });
+export async function deleteCollectionApi(id: string, password?: string): Promise<void> {
+  await apiFetch(`/collection/${id}`, { method: "DELETE", requireAuth: true, password });
 }
 
 /** 获取云端藏列表 */
@@ -137,11 +139,13 @@ export async function getCollectionsApi(): Promise<Collection[]> {
 
 /** 创建藏（云端） */
 export async function addCollectionApi(
-  data: Omit<Collection, "id" | "createdAt" | "updatedAt" | "isSystem">
+  data: Omit<Collection, "id" | "createdAt" | "updatedAt" | "isSystem">,
+  password?: string
 ): Promise<Collection> {
   const res = await apiFetch<{ collection: Collection }>("/collection", {
     method: "POST",
     requireAuth: true,
+    password,
     body: JSON.stringify(data)
   });
   return res.collection;
@@ -178,11 +182,13 @@ export async function downloadBackup(date: string): Promise<{ poems: Poem[] }> {
 
 /** 触发批量 AI 打标签 */
 export async function runBatchAiTags(
-  poemIds?: string[]
+  poemIds?: string[],
+  password?: string
 ): Promise<BatchTagResult> {
   return apiFetch<BatchTagResult>("/poems/batch-tags", {
     method: "POST",
     requireAuth: true,
+    password,
     body: JSON.stringify({ poemIds })
   });
 }

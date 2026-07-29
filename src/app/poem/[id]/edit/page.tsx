@@ -103,7 +103,7 @@ export default function EditPoemPage({ params }: Props) {
   const displayTerm = isSishiMoyuan ? selectedTermMeta : solarTermHook;
 
   const handleSubmit = useCallback(() => {
-    requirePassword(async () => {
+    requirePassword(async (password: string) => {
       if (!poem) return;
       if (!title.trim()) { setError("请输入诗词标题"); return; }
       if (!content.trim()) { setError("请输入诗词正文"); return; }
@@ -121,7 +121,7 @@ export default function EditPoemPage({ params }: Props) {
           solarTerm: selectedSolarTerm,
           annotation: annotation.trim() || undefined,
           tags,
-        });
+        }, password);
         setSaved(true);
         setTimeout(() => router.push(`/poem/${poem.id}`), 1200);
       } catch (e) {
