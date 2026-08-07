@@ -5,8 +5,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 /**
  * 校验请求是否携带正确密码
- * - 密码从环境变量 POEM_PASSWORD 或 NEXT_PUBLIC_POEM_PASSWORD 读取
- * - 前端通过 x-poem-password header 传递
+ * - 密码从非公开环境变量 POEM_PASSWORD 读取（NEXT_PUBLIC_* 会打进 bundle，不采用）
+ * - 前端通过 x-poem-password header 传递（由 PasswordGate 收集输入）
  * - 校验失败返回 401 { error: "unauthorized", message: "密码错误或未提供" }
  * - 校验成功返回 null（调用方继续执行业务逻辑）
  */
