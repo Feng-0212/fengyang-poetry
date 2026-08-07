@@ -133,28 +133,29 @@ async function buildDrawingPrompt(
 }
 
 // 回退图池（按节气/季节分类，实际项目用真实图片 URL）
+// 资源由 scripts/gen-fallback-images.mjs 生成到 public/images/fallback/（SVG，水墨风）
 const FALLBACK_IMAGES: Record<string, string[]> = {
   spring: [
-    "/images/fallback/spring-1.jpg",
-    "/images/fallback/spring-2.jpg",
-    "/images/fallback/spring-3.jpg",
+    "/images/fallback/spring-1.svg",
+    "/images/fallback/spring-2.svg",
+    "/images/fallback/spring-3.svg",
   ],
   summer: [
-    "/images/fallback/summer-1.jpg",
-    "/images/fallback/summer-2.jpg",
-    "/images/fallback/summer-3.jpg",
+    "/images/fallback/summer-1.svg",
+    "/images/fallback/summer-2.svg",
+    "/images/fallback/summer-3.svg",
   ],
   autumn: [
-    "/images/fallback/autumn-1.jpg",
-    "/images/fallback/autumn-2.jpg",
-    "/images/fallback/autumn-3.jpg",
+    "/images/fallback/autumn-1.svg",
+    "/images/fallback/autumn-2.svg",
+    "/images/fallback/autumn-3.svg",
   ],
   winter: [
-    "/images/fallback/winter-1.jpg",
-    "/images/fallback/winter-2.jpg",
-    "/images/fallback/winter-3.jpg",
+    "/images/fallback/winter-1.svg",
+    "/images/fallback/winter-2.svg",
+    "/images/fallback/winter-3.svg",
   ],
-  default: ["/images/fallback/default-1.jpg", "/images/fallback/default-2.jpg"],
+  default: ["/images/fallback/default-1.svg", "/images/fallback/default-2.svg"],
 };
 
 // 根据季节选择回退图

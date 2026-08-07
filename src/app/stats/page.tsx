@@ -25,25 +25,31 @@ export default function StatsPage() {
     })();
   }, []);
 
-  // 写作热力图数据（最近 365 天）
+  // 写作热力图数据（最近 365 天，本地时区）
   const heatmapData = useMemo(() => {
     const today = new Date();
     const days: Record<string, number> = {};
-    
+
+    // 本地时区日期键 YYYY-MM-DD（避免 toISOString 的 UTC 偏移）
+    const toLocalKey = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+        d.getDate()
+      ).padStart(2, "0")}`;
+
     // 初始化最近 365 天
     for (let i = 0; i < 365; i++) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
-      const key = d.toISOString().slice(0, 10);
-      days[key] = 0;
+      days[toLocalKey(d)] = 0;
     }
 
-    // 统计每天写诗数量
-    poems.forEach((p: any) => {
-      const key = typeof p.createdAt === "string" ? p.createdAt.slice(0, 10) : "";
-      if (key && days[key] !== undefined) {
-        days[key]++;
-      }
+    // 统计每天写诗数量（createdAt 为 number 时间戳；兼容旧 string 数据）
+    poems.forEach((p) => {
+      let ts = p.createdAt as number | string;
+      if (typeof ts === "string") ts = new Date(ts).getTime();
+      if (!ts || Number.isNaN(ts)) return;
+      const key = toLocalKey(new Date(ts));
+      if (days[key] !== undefined) days[key]++;
     });
 
     return days;

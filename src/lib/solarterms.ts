@@ -272,79 +272,35 @@ export const SOLAR_TERMS_META: SolarTermMeta[] = [
 ];
 
 // 节气名 → key 映射
+// 说明：由各节气起始日（见 SOLAR_TERMS_META.dateRange）程序化生成全年连续区间，
+// 每个节气自起始日起延续至下一节气起始日的前一天；12月31日之后接次年小寒前的冬至（101-104）。
+// 生成与验证脚本见 docs/修复记录_高优先级_2026-08-07.md。
 const SOLAR_TERM_BY_DATE: Array<{ start: number; end: number; key: SolarTermKey }> = [
-  // 1月
-  { start: 101, end: 107, key: "xiaohan" },
-  { start: 108, end: 121, key: "dahan" },
-  { start: 122, end: 131, key: "dahan" },
-  // 2月
-  { start: 201, end: 202, key: "dahan" },
-  { start: 203, end: 205, key: "lichun" },
-  { start: 206, end: 217, key: "lichun" },
-  { start: 218, end: 220, key: "yushui" },
-  { start: 221, end: 228, key: "yushui" },
-  // 3月
-  { start: 301, end: 304, key: "yushui" },
-  { start: 305, end: 307, key: "jingzhe" },
-  { start: 308, end: 319, key: "jingzhe" },
-  { start: 320, end: 322, key: "chunfen" },
-  { start: 323, end: 331, key: "chunfen" },
-  // 4月
-  { start: 401, end: 403, key: "chunfen" },
-  { start: 404, end: 406, key: "qingming" },
-  { start: 407, end: 418, key: "qingming" },
-  { start: 419, end: 421, key: "guyu" },
-  { start: 422, end: 430, key: "guyu" },
-  // 5月
-  { start: 501, end: 504, key: "guyu" },
-  { start: 505, end: 507, key: "lixia" },
-  { start: 508, end: 519, key: "lixia" },
-  { start: 520, end: 522, key: "xiaoman" },
-  { start: 523, end: 531, key: "xiaoman" },
-  // 6月
-  { start: 601, end: 604, key: "xiaoman" },
-  { start: 605, end: 607, key: "mangzhong" },
-  { start: 608, end: 620, key: "mangzhong" },
-  { start: 621, end: 622, key: "xiazhi" },
-  { start: 623, end: 630, key: "xiazhi" },
-  // 7月
-  { start: 701, end: 705, key: "xiazhi" },
-  { start: 706, end: 708, key: "xiaoshu" },
-  { start: 709, end: 721, key: "xiaoshu" },
-  { start: 722, end: 724, key: "dashu" },
-  { start: 725, end: 731, key: "dashu" },
-  // 8月
-  { start: 801, end: 706, key: "dashu" }, // 占位，8月从1号继续
-  { start: 707, end: 708, key: "dashu" }, // 占位
-  { start: 801, end: 806, key: "dashu" },
-  { start: 807, end: 809, key: "liqiu" },
-  { start: 810, end: 821, key: "liqiu" },
-  { start: 822, end: 824, key: "chushu" },
-  { start: 825, end: 831, key: "chushu" },
-  // 9月
-  { start: 901, end: 906, key: "chushu" },
-  { start: 907, end: 909, key: "bailu" },
-  { start: 910, end: 921, key: "bailu" },
-  { start: 922, end: 924, key: "qiufen" },
-  { start: 925, end: 930, key: "qiufen" },
-  // 10月
-  { start: 1001, end: 907, key: "qiufen" }, // 占位
-  { start: 1008, end: 909, key: "hanlu" },
-  { start: 1010, end: 922, key: "hanlu" },
-  { start: 1023, end: 1024, key: "shuangjiang" },
-  { start: 1025, end: 1031, key: "shuangjiang" },
-  // 11月
-  { start: 1101, end: 1106, key: "shuangjiang" },
-  { start: 1107, end: 1108, key: "lidong" },
-  { start: 1109, end: 1121, key: "lidong" },
-  { start: 1122, end: 1123, key: "xiaoxue" },
-  { start: 1124, end: 1130, key: "xiaoxue" },
-  // 12月
-  { start: 1201, end: 1205, key: "xiaoxue" },
-  { start: 1206, end: 1208, key: "daxue" },
-  { start: 1209, end: 1220, key: "daxue" },
-  { start: 1221, end: 1223, key: "dongzhi" },
-  { start: 1224, end: 1231, key: "dongzhi" },
+  { start: 101, end: 104, key: "dongzhi" },
+  { start: 105, end: 119, key: "xiaohan" },
+  { start: 120, end: 202, key: "dahan" },
+  { start: 203, end: 217, key: "lichun" },
+  { start: 218, end: 304, key: "yushui" },
+  { start: 305, end: 319, key: "jingzhe" },
+  { start: 320, end: 403, key: "chunfen" },
+  { start: 404, end: 418, key: "qingming" },
+  { start: 419, end: 504, key: "guyu" },
+  { start: 505, end: 519, key: "lixia" },
+  { start: 520, end: 604, key: "xiaoman" },
+  { start: 605, end: 620, key: "mangzhong" },
+  { start: 621, end: 705, key: "xiazhi" },
+  { start: 706, end: 721, key: "xiaoshu" },
+  { start: 722, end: 806, key: "dashu" },
+  { start: 807, end: 821, key: "liqiu" },
+  { start: 822, end: 906, key: "chushu" },
+  { start: 907, end: 921, key: "bailu" },
+  { start: 922, end: 1007, key: "qiufen" },
+  { start: 1008, end: 1022, key: "hanlu" },
+  { start: 1023, end: 1106, key: "shuangjiang" },
+  { start: 1107, end: 1121, key: "lidong" },
+  { start: 1122, end: 1205, key: "xiaoxue" },
+  { start: 1206, end: 1220, key: "daxue" },
+  { start: 1221, end: 1231, key: "dongzhi" },
 ];
 
 /**

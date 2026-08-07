@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 720">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F5F0E8"/>
+      <stop offset="100%" stop-color="#D8E6DC"/>
+    </linearGradient>
+  </defs>
+  <rect width="1080" height="720" fill="url(#g)"/>
+  
+  
+  
+  <circle cx="240" cy="230" r="46" fill="#F0E0B8" opacity="0.5"/>
+  <circle cx="250" cy="220" r="46" fill="#D8E6DC" opacity="0.6"/>
+  <circle cx="820" cy="160" r="66" fill="#F0E0B8" opacity="0.85"/>
+  <path d="M0,570 Q250,450 520,530 T1080,500 L1080,720 L0,720 Z" fill="#5A8A7A" opacity="0.22"/>
+  <path d="M0,630 Q400,510 680,590 T1080,560 L1080,720 L0,720 Z" fill="#5A8A7A" opacity="0.34"/>
+  <g transform="translate(90, 560)" opacity="0.55">
+    <rect x="0" y="0" width="86" height="86" rx="4" fill="#5A8A7A"/>
+    <rect x="6" y="6" width="74" height="74" rx="2" fill="none" stroke="#FFFFFF" stroke-width="2" opacity="0.5"/>
+    <text x="43" y="60" text-anchor="middle" font-family="serif" font-size="48" font-weight="900" fill="#FFFFFF">秋</text>
+  </g>
+  <text x="540" y="684" text-anchor="middle" font-family="serif" font-size="26" fill="#5A8A7A" opacity="0.45">夏 · 回退图</text>
+</svg>

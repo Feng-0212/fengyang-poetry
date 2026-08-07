@@ -403,7 +403,7 @@ export default function EditPoemPage({ params }: Props) {
               取消
             </Link>
             <button
-              onClick={() => requirePassword(handleSubmit)}
+              onClick={handleSubmit}
               disabled={saving || saved || !hasChanges}
               className={cn(
                 "inline-flex items-center gap-2 px-8 py-3 rounded-lg text-sm font-medium text-white transition-all duration-300",

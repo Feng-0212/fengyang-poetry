@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 720">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F5F0E8"/>
+      <stop offset="100%" stop-color="#E2E8CE"/>
+    </linearGradient>
+  </defs>
+  <rect width="1080" height="720" fill="url(#g)"/>
+  <ellipse cx="240" cy="300" rx="12" ry="7" fill="#8B9A6B" opacity="0.35" transform="rotate(20 240 300)"/>
+  <ellipse cx="300" cy="250" rx="12" ry="7" fill="#8B9A6B" opacity="0.5" transform="rotate(50 300 250)"/>
+  <ellipse cx="200" cy="380" rx="12" ry="7" fill="#8B9A6B" opacity="0.6499999999999999" transform="rotate(80 200 380)"/>
+  <ellipse cx="340" cy="340" rx="12" ry="7" fill="#8B9A6B" opacity="0.35" transform="rotate(110 340 340)"/>
+  
+  
+  
+  <circle cx="820" cy="160" r="66" fill="#E8D4A8" opacity="0.85"/>
+  <path d="M0,570 Q250,450 520,530 T1080,500 L1080,720 L0,720 Z" fill="#8B9A6B" opacity="0.22"/>
+  <path d="M0,630 Q400,510 680,590 T1080,560 L1080,720 L0,720 Z" fill="#8B9A6B" opacity="0.34"/>
+  <g transform="translate(90, 560)" opacity="0.55">
+    <rect x="0" y="0" width="86" height="86" rx="4" fill="#8B9A6B"/>
+    <rect x="6" y="6" width="74" height="74" rx="2" fill="none" stroke="#FFFFFF" stroke-width="2" opacity="0.5"/>
+    <text x="43" y="60" text-anchor="middle" font-family="serif" font-size="48" font-weight="900" fill="#FFFFFF">秋</text>
+  </g>
+  <text x="540" y="684" text-anchor="middle" font-family="serif" font-size="26" fill="#8B9A6B" opacity="0.45">春 · 回退图</text>
+</svg>

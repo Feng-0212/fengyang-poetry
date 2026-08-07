@@ -341,7 +341,10 @@ function GalleryLayout({ poems, collection }: { poems: Poem[]; collection: Colle
                 </p>
                 <div className="mt-3 flex items-center justify-between text-xs text-ink-light/50">
                   <span>{getSeasonName(poem.season)}季 · {meta?.name}</span>
-                  <span>{formatDate(poem.createdAt).split("-")[1]}/{formatDate(poem.createdAt).split("-")[2]}</span>
+                  <span>
+                    {new Date(poem.createdAt).getMonth() + 1}/
+                    {new Date(poem.createdAt).getDate()}
+                  </span>
                 </div>
               </div>
             </motion.div>
