@@ -61,6 +61,7 @@ function SearchContent() {
   const [allPoems, setAllPoems] = useState<Poem[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [query, setQuery] = useState(initialQuery);
+  const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
   const [selectedCollections, setSelectedCollections] = useState<Set<string>>(new Set());
   const [selectedSeasons, setSelectedSeasons] = useState<Set<string>>(new Set());
   const [groupBy, setGroupBy] = useState<"collection" | "season" | "none">("collection");
@@ -101,11 +102,17 @@ function SearchContent() {
   // 使用新的搜索 Hook（支持拼音 + 语义）
   const { search, searchSemantic, semanticLoading, clearSemantic } = useSearch(allPoems);
 
-  // 搜索结果
+  // 输入防抖：250ms 后再触发搜索（拼音匹配为 O(n) 计算，避免每键全量匹配）
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(query), 250);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  // 搜索结果（基于防抖后的查询）
   const searchResults = useMemo(() => {
-    if (!query.trim()) return [];
-    return search(query);
-  }, [query, search]);
+    if (!debouncedQuery.trim()) return [];
+    return search(debouncedQuery);
+  }, [debouncedQuery, search]);
 
   const matchedPoems = useMemo(() => searchResults.map((r) => r.poem), [searchResults]);
 
@@ -167,9 +174,10 @@ function SearchContent() {
     setSelectedSeasons(new Set());
   };
 
-  // 提交搜索（保存到历史）
+  // 提交搜索（保存到历史，立即生效）
   const handleSearch = (q: string) => {
     setQuery(q);
+    setDebouncedQuery(q);
     if (q.trim()) {
       saveSearch(q);
       // 如果开启语义搜索，触发 AI 搜索

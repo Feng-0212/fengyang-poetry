@@ -166,9 +166,7 @@ export default function AiPanel({
         </div>
       )}
 
-      {/* 赏析草稿面板 */}
-      <AnimatePresence>
-        {/* 标签建议面板 */}
+      {/* 标签建议面板 + 赏析草稿面板（同一 AnimatePresence 管理 exit） */}
       <AnimatePresence>
         {suggestedTags.length > 0 && (
           <motion.div
@@ -219,7 +217,6 @@ export default function AiPanel({
             </div>
           </motion.div>
         )}
-      </AnimatePresence>
 
       {/* 赏析草稿面板 */}
       {draftC && (
