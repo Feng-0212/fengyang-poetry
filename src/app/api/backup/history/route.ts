@@ -5,25 +5,7 @@
 // ============================================================
 import { NextResponse } from "next/server";
 import type { Poem, Collection } from "@/types/poem";
-
-async function getKv() {
-  try {
-    const mod = await import("@upstash/redis");
-    if (mod.Redis) {
-      const url =
-        process.env.UPSTASH_REDIS_REST_URL ||
-        process.env.KV_REST_API_URL ||
-        process.env.REDIS_URL ||
-        "";
-      const token =
-        process.env.UPSTASH_REDIS_REST_TOKEN ||
-        process.env.KV_REST_API_TOKEN ||
-        "";
-      if (url) return new mod.Redis({ url, token });
-    }
-  } catch {}
-  return null;
-}
+import { getKv } from "@/lib/kv";
 
 function authed(req: Request): boolean {
   const secret = process.env.CRON_SECRET;
