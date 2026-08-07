@@ -4,21 +4,7 @@
 "use client";
 
 import { useState } from "react";
-
-const SUGGESTED = [
-  "思乡",
-  "山水",
-  "豪放",
-  "婉约",
-  "田园",
-  "边塞",
-  "咏物",
-  "送别",
-  "怀古",
-  "闺怨",
-  "禅意",
-  "爱情",
-];
+import { SUGGESTED_TAGS as SUGGESTED } from "@/lib/tags";
 
 interface Props {
   value: string[];

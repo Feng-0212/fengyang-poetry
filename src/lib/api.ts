@@ -2,7 +2,7 @@
 // 服务端 API 客户端 — 共享数据层
 // ============================================================
 import type { Poem, Collection } from "@/types/poem";
-import { PASSWORD_KEY } from "./auth";
+import { PASSWORD_KEY, clearStoredPassword } from "./auth";
 
 const BASE = "/api";
 
@@ -32,6 +32,10 @@ async function apiFetch<T>(
     // 401 = 密码错误，抛特定错误让前端弹窗重输
     if (res.status === 401) {
       const body = await res.json().catch(() => ({}));
+      // 清除错误密码，下次写操作需重新输入
+      if (typeof window !== "undefined") {
+        clearStoredPassword();
+      }
       const err = new Error(body.message || "密码错误或未提供");
       (err as any).status = 401;
       throw err;

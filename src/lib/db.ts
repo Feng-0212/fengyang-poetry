@@ -207,27 +207,6 @@ export async function toggleFavorite(id: string): Promise<void> {
   }
 }
 
-export async function getAllPoems(): Promise<Poem[]> {
-  const all = await db.poems.toArray();
-  return all
-    .filter((p) => !p.deletedAt)
-    .sort((a, b) => b.createdAt - a.createdAt);
-}
-
-export async function getPoemsBySolarTerm(solarTerm: string): Promise<Poem[]> {
-  const all = await db.poems.toArray();
-  return all
-    .filter((p) => !p.deletedAt && p.solarTerm === solarTerm)
-    .sort((a, b) => b.createdAt - a.createdAt);
-}
-
-export async function getPoemsBySeason(season: string): Promise<Poem[]> {
-  const all = await db.poems.toArray();
-  return all
-    .filter((p) => !p.deletedAt && p.season === season)
-    .sort((a, b) => b.createdAt - a.createdAt);
-}
-
 // ============================================================
 // Collection CRUD
 // ============================================================
@@ -316,20 +295,4 @@ async function updateCollectionCount(collectionId: string): Promise<void> {
     .filter((p) => !p.deletedAt)
     .count();
   await db.collections.update(collectionId, { poemCount: count });
-}
-
-// ============================================================
-// 数据导入导出
-// ============================================================
-export async function exportAllData(): Promise<Poem[]> {
-  return await db.poems.toArray();
-}
-
-export async function importData(poems: Poem[]): Promise<void> {
-  await db.poems.bulkPut(poems);
-  // 更新所有涉及的藏
-  const collectionIds = [...new Set(poems.map((p) => p.collectionId))];
-  for (const id of collectionIds) {
-    await updateCollectionCount(id);
-  }
 }

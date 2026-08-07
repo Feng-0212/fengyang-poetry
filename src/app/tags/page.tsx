@@ -53,10 +53,10 @@ export default function TagsPage() {
 
   const maxCount = tagStats[0]?.count || 1;
 
-  // 热门榜：按收藏数排序，取前 10
+  // 我的收藏：按个人收藏（isFavorite）过滤，兼容按 favoriteCount 排序
   const hotPoems = useMemo(() => {
     return [...poems]
-      .filter((p) => (p.favoriteCount || 0) > 0)
+      .filter((p) => p.isFavorite)
       .sort((a, b) => (b.favoriteCount || 0) - (a.favoriteCount || 0))
       .slice(0, 10);
   }, [poems]);
@@ -119,7 +119,7 @@ export default function TagsPage() {
             {hotPoems.length > 0 && (
               <section>
                 <h2 className="text-xs text-ink-light tracking-wider uppercase mb-6 text-center">
-                  收藏热榜
+                  我的收藏
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {hotPoems.map((poem, i) => (

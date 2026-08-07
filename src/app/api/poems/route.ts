@@ -49,8 +49,35 @@ async function setPoems(poems: Poem[]): Promise<void> {
   }
 }
 
+// ============================================================
+// 回收站自动清理：超过 30 天的软删除诗词物理清除
+// 惰性执行（每天最多一次，Redis 记时），不阻塞读取响应
+// ============================================================
+const TRASH_TTL = 30 * 24 * 60 * 60 * 1000; // 30 天
+const PURGE_INTERVAL = 24 * 60 * 60 * 1000; // 每天最多执行一次
+
+async function lazyPurgeTrash(): Promise<void> {
+  try {
+    const kv = await getKv();
+    if (!kv) return; // 无 Redis（本地内存回退）时跳过
+    const lastKey = "trash:lastPurge";
+    const last = await kv.get<number>(lastKey);
+    const now = Date.now();
+    if (last && now - last < PURGE_INTERVAL) return;
+    await kv.set(lastKey, now, { ex: 60 * 60 * 24 * 2 });
+    const poems = await getPoems();
+    const cutoff = now - TRASH_TTL;
+    const alive = poems.filter((p) => !p.deletedAt || p.deletedAt > cutoff);
+    if (alive.length !== poems.length) await setPoems(alive);
+  } catch {
+    // 清理失败不影响主流程
+  }
+}
+
 export async function GET() {
   try {
+    // 惰性清理超期回收站（不阻塞响应）
+    void lazyPurgeTrash();
     const poems = await getPoems();
     return NextResponse.json({ poems });
   } catch (e) {

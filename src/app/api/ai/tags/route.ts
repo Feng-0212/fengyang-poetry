@@ -3,15 +3,8 @@
 // 复用已有 AI 模型，按诗词内容推荐 2-3 个标签
 // ============================================================
 import { NextResponse } from "next/server";
-import type { Poem } from "@/types/poem";
 import { createRateLimiter, retryAfterHeader } from "@/lib/ratelimit";
-
-// 预定义标签池（与 TagInput SUGGESTED 保持一致，可扩展）
-const TAG_POOL = [
-  "思乡", "山水", "豪放", "婉约", "田园", "边塞",
-  "咏物", "送别", "怀古", "闺怨", "禅意", "爱情",
-  "羁旅", "隐逸", "闲适", "离愁", "壮志", "悲秋",
-];
+import { TAG_POOL } from "@/lib/tags";
 
 function extractText(data: unknown): string {
   const msg = (data as { choices?: { message?: Record<string, unknown> }[] })

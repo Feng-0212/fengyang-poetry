@@ -3,7 +3,7 @@
 // ============================================================
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
@@ -11,8 +11,8 @@ import Footer from "@/components/layout/Footer";
 import PoemCard from "@/components/poem/PoemCard";
 import AtmosphereLayer from "@/components/poem/AtmosphereLayer";
 import { useSolarTerm } from "@/hooks/useSolarTerm";
+import { useAllPoems } from "@/hooks/usePoem";
 import { SOLAR_TERMS_META, getSolarTermsBySeason, getSeasonName } from "@/lib/solarterms";
-import { getPoemsBySolarTerm, getPoemsBySeason, getAllPoems } from "@/lib/db";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import type { SeasonKey, Poem } from "@/types/poem";
@@ -135,26 +135,17 @@ function SeasonsContent() {
 function SolarTermPoemGrid({
   season, solarTerm, collectionId,
 }: { season?: string; solarTerm?: string; collectionId?: string }) {
-  const [poems, setPoems] = useState<Poem[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    setLoading(true);
-    import("@/lib/db").then(async (db) => {
-      let data: Poem[];
-      if (solarTerm) {
-        data = await db.getPoemsBySolarTerm(solarTerm);
-      } else if (season) {
-        data = await db.getPoemsBySeason(season);
-      } else {
-        data = await db.getAllPoems();
-      }
-      // 过滤藏 + 未删除
-      data = data.filter((p) => !p.deletedAt && (!collectionId || p.collectionId === collectionId));
-      setPoems(data);
-      setLoading(false);
-    });
-  }, [season, solarTerm, collectionId]);
+  // 统一走云端 API（useAllPoems：云端优先，IndexedDB 降级），与其他页面数据源一致
+  const { poems: allPoems, loading } = useAllPoems();
+  const poems = useMemo(() => {
+    return allPoems.filter(
+      (p) =>
+        !p.deletedAt &&
+        (!collectionId || p.collectionId === collectionId) &&
+        (!solarTerm || p.solarTerm === solarTerm) &&
+        (!season || p.season === season)
+    );
+  }, [allPoems, season, solarTerm, collectionId]);
 
   if (loading) return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

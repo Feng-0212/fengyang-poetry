@@ -141,19 +141,30 @@ export function useSearch(poems: Poem[]) {
     (query: string): SearchResult[] => {
       const textResults = searchByTextAndPinyin(query);
 
-      // 如果有语义搜索结果，提升其权重
+      // 语义命中：提升已命中结果的权重；文本未命中的语义结果也一并展示（避免被丢弃）
       if (semanticResults.length > 0) {
         const semanticSet = new Set(semanticResults);
-        return textResults.map((r) => ({
-          ...r,
-          score: semanticSet.has(r.poem.id) ? r.score + 50 : r.score,
-          matchType: semanticSet.has(r.poem.id) ? "semantic" : r.matchType,
-        }));
+        const textIds = new Set(textResults.map((r) => r.poem.id));
+        const semanticOnly = poems
+          .filter((p) => semanticSet.has(p.id) && !textIds.has(p.id))
+          .map(
+            (p): SearchResult => ({ poem: p, score: 150, matchType: "semantic" })
+          );
+        const boosted = textResults.map(
+          (r): SearchResult => ({
+            ...r,
+            score: semanticSet.has(r.poem.id) ? r.score + 50 : r.score,
+            matchType: semanticSet.has(r.poem.id) ? "semantic" : r.matchType,
+          })
+        );
+        return [...semanticOnly, ...boosted]
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 50);
       }
 
       return textResults;
     },
-    [searchByTextAndPinyin, semanticResults]
+    [searchByTextAndPinyin, semanticResults, poems]
   );
 
   return {

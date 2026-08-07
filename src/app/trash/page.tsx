@@ -156,7 +156,7 @@ export default function TrashPage() {
 
           <div className="mt-8 p-4 rounded-lg bg-rice border border-ink/8 text-xs text-ink-light leading-relaxed">
             <p className="font-medium text-ink mb-1">回收站说明</p>
-            <p>· 诗词删除后暂存于此，30 天后将自动清理（待实现）<br />· 永久删除需输入密码，操作不可恢复<br />· 恢复后诗词将回到原藏</p>
+            <p>· 诗词删除后暂存于此，30 天后将自动清理<br />· 永久删除需输入密码，操作不可恢复<br />· 恢复后诗词将回到原藏</p>
           </div>
         </div>
       </main>

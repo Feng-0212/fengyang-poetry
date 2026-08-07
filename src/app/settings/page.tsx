@@ -9,7 +9,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useAllPoems } from "@/hooks/usePoem";
 import { useSolarTerm } from "@/hooks/useSolarTerm";
-import { importData, getAllCollections } from "@/lib/db";
+import { getAllCollections } from "@/lib/db";
 import { addPoem as addPoemApi, getAllPoems } from "@/lib/api";
 import type { Poem } from "@/types/poem";
 import { downloadFile, formatDate, cn } from "@/lib/utils";

@@ -11,7 +11,10 @@ import { NextRequest, NextResponse } from "next/server";
  * - 校验成功返回 null（调用方继续执行业务逻辑）
  */
 export function checkPassword(req: NextRequest): NextResponse | null {
-  const expected = process.env.POEM_PASSWORD || process.env.NEXT_PUBLIC_POEM_PASSWORD || "";
+  // 只认非公开环境变量 POEM_PASSWORD：
+  // NEXT_PUBLIC_* 会打进前端 bundle，若服务端也认它则密码等于公开，无保护意义。
+  // 生产环境务必配置 POEM_PASSWORD（勿用 NEXT_PUBLIC_POEM_PASSWORD）。
+  const expected = process.env.POEM_PASSWORD || "";
   // 允许从 header 或 body 里的 password 字段读取（兼容旧版前端）
   const fromHeader = req.headers.get("x-poem-password") || "";
   const fromQuery = new URL(req.url).searchParams.get("password") || "";

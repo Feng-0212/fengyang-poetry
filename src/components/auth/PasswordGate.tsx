@@ -1,15 +1,17 @@
 // ============================================================
 // 密码门 — 写诗/改诗/删诗操作保护
-// 优先从环境变量 NEXT_PUBLIC_POEM_PASSWORD 读取
-// （避免明文出现在 Git 仓库中，请勿提交 .env.local）
-// fallback：环境变量未设时使用默认 zsklj
+// 前端仅收集密码输入，校验由服务端 POEM_PASSWORD 承担（见 src/lib/auth.ts）
 // ============================================================
 "use client";
 
 import { useState, createContext, useContext, useCallback, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { setStoredPassword } from "@/lib/auth";
 
-const PASSWORD = process.env.NEXT_PUBLIC_POEM_PASSWORD || "zsklj";
+// 前端不再内置/硬编码任何密码（避免把密码打进 bundle 泄露）。
+// 可选配置 NEXT_PUBLIC_POEM_PASSWORD 仅用于本地 UX 预校验；
+// 生产环境的安全校验完全由服务端 POEM_PASSWORD 承担（见 src/lib/auth.ts）。
+const PASSWORD = process.env.NEXT_PUBLIC_POEM_PASSWORD || "";
 
 interface AuthCtx {
   authenticated: boolean;
@@ -38,17 +40,20 @@ export function PasswordProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const verifyPassword = useCallback((pw: string) => {
-    if (pw === PASSWORD) {
-      setShowPrompt(false);
-      const act = pendingAction;
-      setPendingAction(null);
-      if (act) {
-        setTimeout(() => act(), 50);
-      }
-      return true;
+    // 前端不再本地校验（PASSWORD 为空时直接通过）：
+    // 输入存入 localStorage，由服务端 POEM_PASSWORD 校验写操作（见 src/lib/api.ts 401 处理）
+    if (PASSWORD && pw !== PASSWORD) {
+      setError("密码错误");
+      return false;
     }
-    setError("密码错误");
-    return false;
+    setShowPrompt(false);
+    const act = pendingAction;
+    setPendingAction(null);
+    if (act) {
+      setStoredPassword(pw);
+      setTimeout(() => act(), 50);
+    }
+    return true;
   }, [pendingAction]);
 
   const cancel = useCallback(() => {

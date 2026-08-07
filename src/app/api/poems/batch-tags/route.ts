@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Poem } from "@/types/poem";
 import { checkPassword } from "@/lib/auth";
+import { TAG_POOL } from "@/lib/tags";
 
 const KV_KEY = "poems:all";
 const MAX_CONCURRENT = 3; // 同时并发 AI 请求数
@@ -91,13 +92,6 @@ async function generateTagsForPoem(
 ): Promise<{ tags: string[] }> {
   const { key, baseUrl, model } = resolveConfig(req);
   if (!key) return { tags: [] };
-
-  const TAG_POOL = [
-    "思乡", "山水", "豪放", "婉约", "田园", "边塞",
-    "送别", "怀古", "咏史", "即景", "闺怨", "羁旅",
-    "闲适", "隐逸", "哲理", "爱国", "悼亡", "爱情",
-    "节令", "饮酒", "读书", "战争", "渔樵", "行旅",
-  ];
 
   const prompt = `你是一位古典诗词鉴赏家。请根据下面这首诗词，从标签池中推荐 2-3 个最贴切的标签。
 诗词标题：${poem.title || "无题"}
