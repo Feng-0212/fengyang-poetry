@@ -15,6 +15,20 @@ export function checkPassword(req: NextRequest): NextResponse | null {
   // NEXT_PUBLIC_* 会打进前端 bundle，若服务端也认它则密码等于公开，无保护意义。
   // 生产环境务必配置 POEM_PASSWORD（勿用 NEXT_PUBLIC_POEM_PASSWORD）。
   const expected = process.env.POEM_PASSWORD || "";
+
+  // 生产环境未配置密码：明确拒绝写操作，避免「未配置 = 不校验」的静默开放风险。
+  // （本地开发 NODE_ENV=development 时仍放行，方便联调。）
+  if (!expected && process.env.NODE_ENV === "production") {
+    return NextResponse.json(
+      {
+        error: "not-configured",
+        message:
+          "服务器未配置 POEM_PASSWORD，写操作已禁用。请在环境变量中配置非公开的 POEM_PASSWORD 后重试。",
+      },
+      { status: 503 }
+    );
+  }
+
   // 允许从 header 或 body 里的 password 字段读取（兼容旧版前端）
   const fromHeader = req.headers.get("x-poem-password") || "";
   const fromQuery = new URL(req.url).searchParams.get("password") || "";

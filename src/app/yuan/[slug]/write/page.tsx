@@ -16,7 +16,7 @@ import { addPoem } from "@/lib/api";
 import TagInput from "@/components/poem/TagInput";
 import { cn } from "@/lib/utils";
 import type { SeasonKey } from "@/types/poem";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import { usePasswordGate } from "@/components/auth/PasswordGate";
 
 const SEASONS: { key: SeasonKey; label: string; emoji: string }[] = [

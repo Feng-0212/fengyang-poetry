@@ -4,7 +4,7 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 import { usePoems } from "@/hooks/usePoem";
 import type { Collection } from "@/types/poem";
 

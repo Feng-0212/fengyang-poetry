@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import Fuse from "fuse.js";
 import { getAllCollections } from "@/lib/db";
 import { getAllPoems } from "@/lib/api";

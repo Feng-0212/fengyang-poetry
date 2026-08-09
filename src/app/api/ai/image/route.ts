@@ -11,6 +11,26 @@ export const maxDuration = 120;
 // 指数退避延迟
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+// dataURL 大小上限（base64 字符数）：超过则退回原始 URL，避免撑爆 Redis/IndexedDB
+const MAX_DATA_URL_LEN = 4 * 1024 * 1024; // 4MB base64（约 3MB 图片）
+
+/**
+ * 下载图片并转成自包含 dataURL，避免第三方临时 URL 过期后裂图。
+ * - 成功返回 data:...;base64,...
+ * - 失败（网络错误/非 2xx/超过大小上限）抛错，由调用方决定是否退回原 URL
+ */
+async function urlToDataUrl(url: string): Promise<string> {
+  const resp = await fetch(url, { signal: AbortSignal.timeout(15_000) });
+  if (!resp.ok) throw new Error(`下载图片失败 (${resp.status})`);
+  const buf = await resp.arrayBuffer();
+  const b64 = Buffer.from(buf).toString("base64");
+  if (b64.length > MAX_DATA_URL_LEN) {
+    throw new Error("图片过大，跳过 dataURL 转换");
+  }
+  const mime = resp.headers.get("content-type") || "image/png";
+  return `data:${mime};base64,${b64}`;
+}
+
 // 文本 Provider（生成绘画提示词用）
 function resolveTextConfig(req: Request) {
   const h = req.headers;
@@ -207,7 +227,13 @@ async function generateImageWithRetry(
         const item = data?.data?.[0];
         let image = "";
         if (item?.url) {
-          image = item.url;
+          // 优先下载转 dataURL：第三方临时 URL 会过期，存自包含图片数据不裂图
+          try {
+            image = await urlToDataUrl(item.url);
+          } catch {
+            // 下载失败/过大：退回原 URL（与旧行为一致，至少当下可用）
+            image = item.url;
+          }
         } else if (item?.b64_json) {
           image = `data:image/png;base64,${item.b64_json}`;
         }

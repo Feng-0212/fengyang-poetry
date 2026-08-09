@@ -24,7 +24,7 @@ import { getSolarTermMeta, getSeasonName } from "@/lib/solarterms";
 import { formatDate } from "@/lib/utils";
 import { deletePoem, toggleFavorite } from "@/lib/api";
 import { usePasswordGate } from "@/components/auth/PasswordGate";
-import { motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 interface Props {

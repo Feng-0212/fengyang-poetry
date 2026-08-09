@@ -3,7 +3,7 @@
 // ============================================================
 "use client";
 
-import { motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 import { useAtmosphere } from "@/hooks/useAtmosphere";
 import type { SolarTermMeta } from "@/types/poem";
 

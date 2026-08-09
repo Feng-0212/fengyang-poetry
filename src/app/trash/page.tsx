@@ -15,7 +15,7 @@ import {
   permanentlyDeletePoem,
 } from "@/lib/api";
 import { formatRelativeTime, cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import { usePasswordGate } from "@/components/auth/PasswordGate";
 import type { Poem, Collection } from "@/types/poem";
 

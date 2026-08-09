@@ -5,6 +5,7 @@ import type { Metadata, Viewport } from "next";
 import ClientShell from "@/components/layout/ClientShell";
 import ServiceWorkerRegister from "@/components/pwa/ServiceWorkerRegister";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
+import { LazyMotion, domMax } from "framer-motion";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -74,9 +75,14 @@ export default function RootLayout({
         />
       </head>
       <body className="paper-texture antialiased">
-        <ErrorBoundary>
-          <ClientShell>{children}</ClientShell>
-        </ErrorBoundary>
+        {/* LazyMotion + m 组件：动画特性（domMax）由根布局统一注入，
+            组件侧用 `m`（最小 proxy）配合读取，保持动画库单一实例。
+            首屏体积优化主要由 ClientShell 中 SearchModal 动态导入实现。 */}
+        <LazyMotion features={domMax} strict={false}>
+          <ErrorBoundary>
+            <ClientShell>{children}</ClientShell>
+          </ErrorBoundary>
+        </LazyMotion>
         <ServiceWorkerRegister />
       </body>
     </html>

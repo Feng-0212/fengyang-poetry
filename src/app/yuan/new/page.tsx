@@ -10,7 +10,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { addCollection } from "@/lib/db";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 
 const PRESET_COLORS = [
   { color: "#C14A3F", name: "朱砂" },

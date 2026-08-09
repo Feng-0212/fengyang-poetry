@@ -8,7 +8,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { getAllPoems } from "@/lib/api";
 import type { Poem } from "@/types/poem";
-import { motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 
 export default function StatsPage() {
   const [poems, setPoems] = useState<Poem[]>([]);

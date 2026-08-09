@@ -14,7 +14,7 @@ import { addPoem as addPoemApi, getAllPoems } from "@/lib/api";
 import type { Poem } from "@/types/poem";
 import { downloadFile, formatDate, cn } from "@/lib/utils";
 import { exportMarkdown, printPoems } from "@/lib/export";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import { SOLAR_TERMS_META } from "@/lib/solarterms";
 import { usePasswordGate } from "@/components/auth/PasswordGate";
 import { useTheme } from "@/components/theme/ThemeProvider";

@@ -4,7 +4,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import type { Poem } from "@/types/poem";
 import { generateCommentary, generateImage, getAiTags } from "@/lib/ai";
 import { updatePoem } from "@/lib/api";

@@ -5,7 +5,7 @@
 // Canvas 绘制诗词竖排水墨卡片，支持下载 / 系统分享
 // ============================================================
 import { useEffect, useRef, useState, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import type { Poem, Collection } from "@/types/poem";
 import { getSolarTermMeta } from "@/lib/solarterms";
 import { formatDate } from "@/lib/utils";

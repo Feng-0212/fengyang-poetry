@@ -11,7 +11,7 @@ import Footer from "@/components/layout/Footer";
 import PoemCard from "@/components/poem/PoemCard";
 import { useCollection } from "@/hooks/useCollection";
 import { usePoems } from "@/hooks/usePoem";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/utils";
 import { getSolarTermMeta, getSeasonName } from "@/lib/solarterms";

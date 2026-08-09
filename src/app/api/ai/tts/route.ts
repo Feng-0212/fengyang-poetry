@@ -7,6 +7,8 @@
 import { cacheGet, cacheSet, hashKey } from "@/lib/kv";
 import { createRateLimiter, retryAfterHeader } from "@/lib/ratelimit";
 import { MsEdgeTTS, OUTPUT_FORMAT } from "msedge-tts";
+import { readFile } from "fs/promises";
+import path from "path";
 
 export const runtime = "nodejs";
 export const maxDuration = 15;
@@ -109,6 +111,28 @@ export async function POST(req: Request) {
       });
     }
   } catch { /* 缓存不可用则跳过 */ }
+
+  // 未命中缓存：优先读取静态预生成音频（scripts/tts-pregen.mjs 输出到 public/audio/<hash>.mp3）。
+  // 本地/自建部署可读；Vercel 上若函数环境不可读则继续走下方降级逻辑（行为与旧版一致）。
+  const staticHash = hashKey(voiceName, rate, text);
+  try {
+    const mp3 = await readFile(
+      path.join(process.cwd(), "public", "audio", `${staticHash}.mp3`)
+    );
+    if (mp3 && mp3.length > 0) {
+      // 尽力回填 Redis 缓存，供后续快速命中
+      try {
+        await cacheSet(cacheKey, mp3.toString("base64"), CACHE_TTL);
+      } catch { /* ignore */ }
+      return new Response(toArrayBuffer(mp3), {
+        headers: {
+          "Content-Type": "audio/mpeg",
+          "Cache-Control": "public, max-age=31536000, immutable",
+          "X-Cache": "STATIC",
+        },
+      });
+    }
+  } catch { /* 静态文件不存在或不可读，继续降级 */ }
 
   // 未命中缓存：默认直接返回 503，让前端快速回退浏览器 TTS（避免 25s 干等）
   if (!RUNTIME_SYNTH) {

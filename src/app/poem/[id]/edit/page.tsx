@@ -17,7 +17,7 @@ import TagInput from "@/components/poem/TagInput";
 import { getCollectionById } from "@/lib/db";
 import { COLLECTION_IDS } from "@/types/poem";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import { usePasswordGate } from "@/components/auth/PasswordGate";
 import type { SeasonKey, SolarTermKey, Collection } from "@/types/poem";
 

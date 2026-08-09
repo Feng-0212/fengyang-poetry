@@ -12,7 +12,7 @@ import PoemCard from "@/components/poem/PoemCard";
 import SolarTermNav from "@/components/poem/SolarTermNav";
 import { useSolarTerm } from "@/hooks/useSolarTerm";
 import { usePoems, useSeasonPoems } from "@/hooks/usePoem";
-import { motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 import { COLLECTION_IDS, type Collection } from "@/types/poem";
 import { getCollectionBySlug } from "@/lib/db";
 import type { SeasonKey } from "@/types/poem";

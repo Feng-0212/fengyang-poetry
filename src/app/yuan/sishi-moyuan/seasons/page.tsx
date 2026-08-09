@@ -14,7 +14,7 @@ import { useSolarTerm } from "@/hooks/useSolarTerm";
 import { useAllPoems } from "@/hooks/usePoem";
 import { SOLAR_TERMS_META, getSolarTermsBySeason, getSeasonName } from "@/lib/solarterms";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 import type { SeasonKey, Poem } from "@/types/poem";
 import { COLLECTION_IDS } from "@/types/poem";
 

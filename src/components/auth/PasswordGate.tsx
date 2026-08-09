@@ -5,7 +5,7 @@
 "use client";
 
 import { useState, createContext, useContext, useCallback, type ReactNode } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import { setStoredPassword } from "@/lib/auth";
 
 // 前端不再内置/硬编码任何密码（避免把密码打进 bundle 泄露）。

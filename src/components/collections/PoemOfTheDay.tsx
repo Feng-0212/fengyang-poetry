@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 import { getAllPoems } from "@/lib/api";
 import { getSolarTerm } from "@/lib/solarterms";
 import type { Poem } from "@/types/poem";

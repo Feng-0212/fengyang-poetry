@@ -3,7 +3,7 @@
 // ============================================================
 "use client";
 
-import { motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 import Link from "next/link";
 import { SOLAR_TERMS_META } from "@/lib/solarterms";
 import { useSolarTerm } from "@/hooks/useSolarTerm";

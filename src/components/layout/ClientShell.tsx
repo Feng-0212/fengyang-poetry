@@ -4,9 +4,14 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import SearchModal from "@/components/search/SearchModal";
+import dynamic from "next/dynamic";
 import { PasswordProvider } from "@/components/auth/PasswordGate";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
+
+// 搜索 Modal 按需加载（含 fuse.js 语义搜索），仅打开时才下载，减小全站共享 JS
+const SearchModal = dynamic(() => import("@/components/search/SearchModal"), {
+  ssr: false,
+});
 
 interface SearchContextType {
   openSearch: () => void;
