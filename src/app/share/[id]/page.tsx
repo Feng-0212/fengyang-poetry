@@ -115,7 +115,7 @@ export default async function SharePage({
               {authorLine}
               {termMeta ? ` · ${termMeta.name}` : ""}
             </p>
-            <pre className="whitespace-pre-wrap font-[var(--font-noto)] text-lg leading-loose text-ink text-center mb-6">
+            <pre className="whitespace-pre-wrap font-[var(--font-lxgw)] text-lg leading-loose text-ink text-center mb-6">
               {poem.content}
             </pre>
 

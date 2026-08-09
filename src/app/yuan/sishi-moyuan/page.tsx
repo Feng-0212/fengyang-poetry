@@ -10,6 +10,7 @@ import Footer from "@/components/layout/Footer";
 import AtmosphereLayer from "@/components/poem/AtmosphereLayer";
 import PoemCard from "@/components/poem/PoemCard";
 import SolarTermNav from "@/components/poem/SolarTermNav";
+import TtsSequenceButton from "@/components/poem/TtsSequenceButton";
 import { useSolarTerm } from "@/hooks/useSolarTerm";
 import { usePoems, useSeasonPoems } from "@/hooks/usePoem";
 import { m as motion } from "framer-motion";
@@ -128,6 +129,14 @@ export default function SishiMoyuanPage() {
                 >
                   游览节气诗库
                 </Link>
+                <Link
+                  href="/yuan/sishi-moyuan/calendar"
+                  prefetch={false}
+                  className="inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm border transition-all hover:bg-ink/5"
+                  style={{ borderColor: `${solarTerm.color}40`, color: "rgba(26,26,26,0.6)" }}
+                >
+                  诗词日历
+                </Link>
               </div>
             </motion.div>
 
@@ -160,9 +169,10 @@ export default function SishiMoyuanPage() {
             <SolarTermNav />
           </motion.div>
 
-          {/* 季节筛选 */}
-          <div className="flex items-center gap-2 mb-6">
-            {([
+          {/* 季节筛选 + 连续朗读 */}
+          <div className="flex items-center justify-between gap-3 mb-6">
+            <div className="flex items-center gap-2">
+              {([
               { key: "all", label: "全部" },
               { key: "spring", label: "春" },
               { key: "summer", label: "夏" },
@@ -182,6 +192,10 @@ export default function SishiMoyuanPage() {
                 {tab.label}
               </button>
             ))}
+            </div>
+            {!loading && filteredPoems.length > 0 && (
+              <TtsSequenceButton poems={filteredPoems} color={solarTerm.color} />
+            )}
           </div>
 
           {/* 诗词网格 */}

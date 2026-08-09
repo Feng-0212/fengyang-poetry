@@ -53,10 +53,20 @@ export default function RootLayout({
           href="https://fonts.gstatic.com"
           crossOrigin="anonymous"
         />
+        {/* 字体非阻塞加载：media=print 技巧避免 Google Fonts CSS 阻塞首屏渲染（display=swap 已保证字体就绪后平滑替换） */}
         <link
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;400;500;600;700&display=swap"
+          media="print"
+          // @ts-expect-error 非阻塞加载技巧：onload 为字符串 HTML 属性，加载完成后切回 all
+          onload="this.media='all'"
         />
+        <noscript>
+          <link
+            rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;400;500;600;700&display=swap"
+          />
+        </noscript>
         <link rel="manifest" href="/manifest.json" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />

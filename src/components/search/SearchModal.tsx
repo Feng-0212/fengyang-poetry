@@ -110,11 +110,15 @@ export default function SearchModal({ open, onClose }: Props) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
+            aria-hidden="true"
             className="fixed inset-0 bg-ink/40 backdrop-blur-sm z-[9997]"
           />
 
           {/* 搜索框 */}
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label="搜索诗词"
             initial={{ opacity: 0, scale: 0.95, y: -20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -20 }}
@@ -151,6 +155,7 @@ export default function SearchModal({ open, onClose }: Props) {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="搜索诗词标题、内容或注释..."
+                  aria-label="搜索诗词标题、内容或注释"
                   className="flex-1 bg-transparent border-none outline-none text-base text-ink-dark placeholder:text-ink-light/50"
                   style={{ fontFamily: "var(--font-lxgw)" }}
                 />

@@ -4,10 +4,12 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { getAllPoems } from "@/lib/api";
-import type { Poem } from "@/types/poem";
+import { getSolarTermMeta, getSeasonName } from "@/lib/solarterms";
+import type { Poem, SolarTermKey } from "@/types/poem";
 import { m as motion } from "framer-motion";
 
 export default function StatsPage() {
@@ -87,6 +89,39 @@ export default function StatsPage() {
       }
     });
     return counts;
+  }, [poems]);
+
+  // 收藏 Top10（按收藏时间倒序，附节气信息）
+  const favoriteTop = useMemo(
+    () => poems.filter((p) => p.isFavorite).slice(0, 10),
+    [poems]
+  );
+
+  // 最长连续写作天数（基于热力图日期键，键已按 YYYY-MM-DD 字典序排列）
+  const longestStreak = useMemo(() => {
+    let best = 0;
+    let cur = 0;
+    for (const [, count] of Object.entries(heatmapData)) {
+      if (count > 0) {
+        cur++;
+        best = Math.max(best, cur);
+      } else {
+        cur = 0;
+      }
+    }
+    return best;
+  }, [heatmapData]);
+
+  // 节气写作分布（Top 8）
+  const termStats = useMemo(() => {
+    const counts: Record<string, number> = {};
+    poems.forEach((p) => {
+      if (!p.solarTerm) return;
+      counts[p.solarTerm] = (counts[p.solarTerm] || 0) + 1;
+    });
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8);
   }, [poems]);
 
   // 热力图颜色
@@ -296,6 +331,99 @@ export default function StatsPage() {
               })}
           </div>
         </section>
+
+        {/* 最长连续写作 */}
+        {longestStreak > 0 && (
+          <section className="mt-12 p-6 rounded-xl bg-white/60 border border-ink/8">
+            <h2 className="font-[var(--font-mashan)] text-lg text-ink-dark mb-4">
+              最长连续写作
+            </h2>
+            <div className="flex items-end gap-2">
+              <span className="font-[var(--font-mashan)] text-5xl text-cinnabar">
+                {longestStreak}
+              </span>
+              <span className="text-ink-light text-sm mb-2">天 未曾间断</span>
+            </div>
+            <p className="text-xs text-ink-light mt-2">文思如泉，贵在坚持</p>
+          </section>
+        )}
+
+        {/* 收藏 Top10 */}
+        {favoriteTop.length > 0 && (
+          <section className="mt-12 p-6 rounded-xl bg-white/60 border border-ink/8">
+            <h2 className="font-[var(--font-mashan)] text-lg text-ink-dark mb-4">
+              收藏 Top10
+            </h2>
+            <div className="space-y-2">
+              {favoriteTop.map((p, i) => {
+                const meta = p.solarTerm ? getSolarTermMeta(p.solarTerm) : undefined;
+                return (
+                  <Link
+                    key={p.id}
+                    href={`/poem/${p.id}`}
+                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-ink/5 transition-colors"
+                  >
+                    <span
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0"
+                      style={{
+                        backgroundColor: i < 3 ? "rgba(193,74,63,0.15)" : "rgba(26,26,26,0.05)",
+                        color: i < 3 ? "#C14A3F" : "rgba(26,26,26,0.5)",
+                      }}
+                    >
+                      {i + 1}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <span className="font-[var(--font-mashan)] text-ink-dark">
+                        《{p.title}》
+                      </span>
+                      <span className="text-xs text-ink-light ml-2">
+                        {p.author || "佚名"}
+                      </span>
+                    </div>
+                    <span className="text-xs text-ink-light/60 flex-shrink-0">
+                      {getSeasonName(p.season)}
+                      {meta ? ` · ${meta.name}` : ""}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* 节气写作分布 */}
+        {termStats.length > 0 && (
+          <section className="mt-12 p-6 rounded-xl bg-white/60 border border-ink/8">
+            <h2 className="font-[var(--font-mashan)] text-lg text-ink-dark mb-4">
+              节气写作分布
+            </h2>
+            <div className="space-y-2">
+              {termStats.map(([key, count]) => {
+                const meta = getSolarTermMeta(key as SolarTermKey);
+                const max = termStats[0][1];
+                return (
+                  <div key={key} className="flex items-center gap-3">
+                    <span className="w-24 text-xs text-ink-light text-right flex-shrink-0">
+                      {meta?.name || key}
+                    </span>
+                    <div className="flex-1 h-5 bg-ink/5 rounded overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${(count / max) * 100}%` }}
+                        transition={{ delay: 0.1, duration: 0.5 }}
+                        className="h-full"
+                        style={{ backgroundColor: meta?.color || "#C14A3F", opacity: 0.7 }}
+                      />
+                    </div>
+                    <span className="w-10 text-right text-sm text-ink-light">
+                      {count} 首
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
       </main>
       <Footer />
     </div>

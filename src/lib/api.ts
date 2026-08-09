@@ -6,6 +6,33 @@ import { PASSWORD_KEY, clearStoredPassword } from "./auth";
 
 const BASE = "/api";
 
+// ============================================================
+// 诗词列表短 TTL 缓存（客户端内存）
+// 目的：同一页面多处 hook（如四时墨苑同时 usePoems + 4×useSeasonPoems）
+// 不再各自发请求；写操作后调用 invalidatePoemsCache() 强制刷新。
+// TTL 10s：多页面间短暂共享同一份数据，数据一致性由失效机制保证。
+// ============================================================
+const POEMS_CACHE_TTL = 10_000;
+let poemsCache: { raw: Poem[]; expiresAt: number } | null = null;
+let inflight: Promise<Poem[]> | null = null;
+
+/** 写操作后调用：下次 getAllPoems 强制重新拉取 */
+export function invalidatePoemsCache() {
+  poemsCache = null;
+}
+
+async function fetchAllRaw(): Promise<Poem[]> {
+  if (poemsCache && poemsCache.expiresAt > Date.now()) return poemsCache.raw;
+  if (inflight) return inflight;
+  inflight = (async () => {
+    const res = await apiFetch<{ poems: Poem[] }>("/poems");
+    poemsCache = { raw: res.poems, expiresAt: Date.now() + POEMS_CACHE_TTL };
+    inflight = null;
+    return res.poems;
+  })();
+  return inflight;
+}
+
 async function apiFetch<T>(
   url: string,
   init?: RequestInit & { requireAuth?: boolean }
@@ -58,20 +85,20 @@ export async function addPoem(
     requireAuth: true,
     body: JSON.stringify(data)
   });
+  invalidatePoemsCache();
   return res.id;
 }
 
 /** 获取全部诗词 */
 export async function getAllPoems(): Promise<Poem[]> {
-  const res = await apiFetch<{ poems: Poem[] }>("/poems");
-  return res.poems.filter((p) => !p.deletedAt)
-    .sort((a, b) => b.createdAt - a.createdAt);
+  const all = await fetchAllRaw();
+  return all.filter((p) => !p.deletedAt).sort((a, b) => b.createdAt - a.createdAt);
 }
 
 /** 获取全部诗词（包括已软删除的） */
 export async function getAllPoemsIncludingDeleted(): Promise<Poem[]> {
-  const res = await apiFetch<{ poems: Poem[] }>("/poems");
-  return res.poems.sort((a, b) => b.createdAt - a.createdAt);
+  const all = await fetchAllRaw();
+  return all.sort((a, b) => b.createdAt - a.createdAt);
 }
 
 /** 恢复软删除的诗词 */
@@ -81,11 +108,13 @@ export async function restorePoem(id: string): Promise<void> {
     body: JSON.stringify({ deletedAt: null }),
     requireAuth: true
   });
+  invalidatePoemsCache();
 }
 
 /** 永久删除诗词（从 Redis 物理删除） */
 export async function permanentlyDeletePoem(id: string): Promise<void> {
   await apiFetch(`/poem/${id}?permanent=1`, { method: "DELETE", requireAuth: true });
+  invalidatePoemsCache();
 }
 
 /** 获取单首诗词 */
@@ -108,11 +137,13 @@ export async function updatePoem(
     body: JSON.stringify(changes),
     requireAuth: true
   });
+  invalidatePoemsCache();
 }
 
 /** 删除诗词（软删除） */
 export async function deletePoem(id: string): Promise<void> {
   await apiFetch(`/poem/${id}`, { method: "DELETE", requireAuth: true });
+  invalidatePoemsCache();
 }
 
 /** 收藏切换 */
@@ -131,6 +162,7 @@ export async function toggleFavorite(id: string): Promise<void> {
 /** 删除藏（云端删除该藏下所有诗词） */
 export async function deleteCollectionApi(id: string): Promise<void> {
   await apiFetch(`/collection/${id}`, { method: "DELETE", requireAuth: true });
+  invalidatePoemsCache();
 }
 
 /** 获取云端藏列表 */
@@ -188,5 +220,8 @@ export async function runBatchAiTags(
     method: "POST",
     requireAuth: true,
     body: JSON.stringify({ poemIds })
+  }).then((res) => {
+    invalidatePoemsCache();
+    return res;
   });
 }

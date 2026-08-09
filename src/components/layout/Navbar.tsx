@@ -10,9 +10,9 @@ import { useSearch } from "@/components/layout/ClientShell";
 import SealStamp from "@/components/seals/SealStamp";
 import { cn } from "@/lib/utils";
 
-const NAV_LINKS = [
+const NAV_LINKS: { href: string; label: string; prefetch?: boolean }[] = [
   { href: "/yuan/sishi-moyuan", label: "四时墨苑" },
-  { href: "/chain", label: "接龙" },
+  { href: "/chain", label: "接龙", prefetch: false }, // 低频页，不预取
   { href: "/search", label: "搜索" },
   { href: "/settings", label: "设置" },
 ];
@@ -69,6 +69,7 @@ export default function Navbar() {
             onClick={openSearch}
             className="text-[10px] px-1.5 py-1.5 rounded border border-ink/10 text-ink-light hover:bg-ink/5"
             title="快速搜索 ⌘K"
+            aria-label="打开快速搜索"
           >
             ⌘K
           </button>
@@ -80,6 +81,7 @@ export default function Navbar() {
             <Link
               key={link.href}
               href={link.href}
+              prefetch={link.prefetch ?? true}
               className={cn(
                 "nav-link hide-mobile",
                 (pathname === link.href || (link.href === "/search" && pathname?.startsWith("/search"))) && "text-ink-dark font-medium"
