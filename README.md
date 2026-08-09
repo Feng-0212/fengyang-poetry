@@ -186,7 +186,7 @@ fengyang-poetry/
 │   └── types/poem.ts               # 类型定义（Poem/Collection/User/Comment）
 ├── scripts/                        # 维护脚本（TTS 预生成 / 回退图生成）
 ├── public/                         # 静态资源 + PWA + 静态音频 + 回退图池
-├── docs/                           # 交付记录 / 改动汇总 / 修复记录 / 部署清单 / PRD
+├── docs/                           # 过程文档（YYYY-MM-DD_类别_内容）：对话/改动/修复/交付/PRD
 ├── vercel.json                     # Vercel Cron 每日备份
 └── package.json
 ```
