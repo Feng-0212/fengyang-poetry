@@ -37,10 +37,13 @@ export default function PoemDetailPage({ params }: Props) {
   const router = useRouter();
   const { poem, loading, refresh: refreshPoem } = usePoem(id);
   const solarTermHook = useSolarTerm();
-  const { requirePassword } = usePasswordGate();
+  const { user, requirePassword } = usePasswordGate();
   const [collection, setCollection] = useState<Collection | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // 当前用户是否已收藏（真实收藏语义：favoritedBy 包含当前用户）
+  const isFaved = !!poem?.favoritedBy?.includes(user?.id || "");
 
   const copyShareLink = async () => {
     const url = `${window.location.origin}/share/${poem?.id}`;
@@ -121,8 +124,11 @@ export default function PoemDetailPage({ params }: Props) {
   };
 
   const handleToggleFavorite = async () => {
-    await toggleFavorite(poem.id);
-    await refreshPoem();
+    // 未登录 → 跳登录；已登录切换收藏后重新拉取（服务端返回最新 favoritedBy/count）
+    await requirePassword(async () => {
+      await toggleFavorite(poem.id);
+      await refreshPoem();
+    });
   };
 
   return (
@@ -185,11 +191,11 @@ export default function PoemDetailPage({ params }: Props) {
                 onClick={handleToggleFavorite}
                 className={cn(
                   "rounded-full flex items-center gap-1.5 px-3 py-1.5 transition-all text-sm",
-                  poem.isFavorite
+                  isFaved
                     ? "bg-cinnabar/10 text-cinnabar"
                     : "bg-ink/5 text-ink-light hover:bg-ink/10"
                 )}
-                title={poem.isFavorite ? "取消收藏" : "收藏"}
+                title={isFaved ? "取消收藏" : "收藏"}
               >
                 <span className="text-sm">♥</span>
                 {poem.favoriteCount > 0 && (
@@ -306,10 +312,16 @@ export default function PoemDetailPage({ params }: Props) {
                     <span>{poem.author || "佚名"}</span>
                     {(poem.author || poem.dynasty) && <span> · </span>}
                     <span>{poem.dynasty || "佚名"}</span>
-                    {poem.ownerName && (
+                    {poem.ownerName && poem.ownerId && (
                       <>
                         <span> · </span>
-                        <span className="text-cinnabar/80">@{poem.ownerName}</span>
+                        <Link
+                          href={`/u/${poem.ownerId}`}
+                          className="text-cinnabar/80 hover:text-cinnabar hover:underline transition-colors"
+                          title={`查看 ${poem.ownerName} 的墨苑`}
+                        >
+                          @{poem.ownerName}
+                        </Link>
                       </>
                     )}
                     {poem.visibility === "private" && (

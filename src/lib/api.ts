@@ -136,21 +136,19 @@ export async function deletePoem(id: string): Promise<void> {
 }
 
 /**
- * 收藏切换。
- * 语义澄清：单用户私人库场景下 isFavorite 为主键（0/1），favoriteCount 为
- * 冗余的收藏次数（单用户下恒为 0/1），仅用于排序展示；若未来开放多用户，
- * 需将收藏重构为独立的 poem_id→user_id 关系表，并废弃 favoriteCount。
+ * 收藏切换（多用户真实收藏）。
+ * 语义：favoritedBy 列表去重 + favoriteCount 计数；需登录（未登录 401）。
+ * 返回切换后的状态与最新计数。
  */
-export async function toggleFavorite(id: string): Promise<void> {
-  const poem = await getPoem(id);
-  if (poem) {
-    await updatePoem(id, {
-      isFavorite: !poem.isFavorite,
-      favoriteCount: poem.isFavorite
-        ? Math.max(0, (poem.favoriteCount || 1) - 1)
-        : (poem.favoriteCount || 0) + 1
-    });
-  }
+export async function toggleFavorite(
+  id: string
+): Promise<{ favorited: boolean; favoriteCount: number }> {
+  const res = await apiFetch<{ favorited: boolean; favoriteCount: number }>(
+    `/poem/${id}/favorite`,
+    { method: "POST", requireAuth: true }
+  );
+  invalidatePoemsCache();
+  return res;
 }
 
 /** 删除藏（云端删除该藏下所有诗词） */

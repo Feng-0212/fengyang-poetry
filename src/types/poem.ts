@@ -61,7 +61,8 @@ export interface Poem {
   season: SeasonKey;
   solarTerm: SolarTermKey;
   isFavorite: boolean;
-  favoriteCount: number; // 冗余计数：与 isFavorite 同步（收藏=1，未收藏=0），仅作展示兼容，不代表多人收藏数
+  favoriteCount: number; // 收藏次数（多用户：favoritedBy 长度，真实计数）
+  favoritedBy?: string[]; // 收藏者用户 ID 列表（多用户社区化收藏关系）
   // 多用户：作品归属与可见性
   ownerId?: string; // 作者用户 ID（旧数据继承给管理员前为空）
   ownerName?: string; // 作者展示名（冗余存储，避免联查）

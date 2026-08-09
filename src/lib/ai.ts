@@ -127,3 +127,20 @@ export async function getAiTags(
   const data = await res.json();
   return (data.tags as string[]).filter(Boolean);
 }
+
+export type WriteMode = "continue" | "parody";
+
+/** AI 续写（给已有诗句续写）或仿写（按主题/风格创作新诗） */
+export async function generateWrite(
+  mode: WriteMode,
+  input: { title?: string; content?: string; author?: string; dynasty?: string; style?: string }
+): Promise<string> {
+  const res = await fetch("/api/ai/write", {
+    method: "POST",
+    headers: buildHeaders("text"),
+    body: JSON.stringify({ mode, ...input }),
+  });
+  if (!res.ok) throw new Error(await parseError(res));
+  const data = await res.json();
+  return (data.text as string) || "";
+}

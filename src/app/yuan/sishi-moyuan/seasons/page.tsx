@@ -59,6 +59,7 @@ function SeasonsContent() {
     ? SOLAR_TERMS_META.find((m) => m.key === selectedSolarTerm)
     : null;
   const displaySeason = selectedSeason || solarTermHook.season;
+  const displaySeasonName = SEASONS.find((s) => s.key === displaySeason)?.label || "";
   const solarTerms = getSolarTermsBySeason(displaySeason as SeasonKey);
 
   return (
@@ -112,6 +113,21 @@ function SeasonsContent() {
             </div>
           </motion.div>
         )}
+
+        {/* 同题创作入口：预设当前选中的节气/季节，跳转写诗页 */}
+        <div className="text-center mb-8">
+          <Link
+            href={`/yuan/sishi-moyuan/write?solarTerm=${selectedSolarTerm || currentSolarTerm?.key || ""}&season=${selectedSeason || displaySeason}`}
+            className="inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm text-white transition-all hover:opacity-90"
+            style={{ backgroundColor: solarTermHook.color }}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+            同题创作 · {currentSolarTerm?.name || displaySeasonName}
+          </Link>
+          <p className="text-xs text-ink-light/60 mt-2">与墨苑诸友同写一个节气</p>
+        </div>
 
         <SolarTermPoemGrid
           season={selectedSeason || undefined}

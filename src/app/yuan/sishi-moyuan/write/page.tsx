@@ -3,8 +3,8 @@
 // ============================================================
 "use client";
 
-import { useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -12,9 +12,10 @@ import AtmosphereLayer from "@/components/poem/AtmosphereLayer";
 import { useSolarTerm } from "@/hooks/useSolarTerm";
 import { SOLAR_TERMS_META } from "@/lib/solarterms";
 import { addPoem } from "@/lib/api";
+import { generateWrite } from "@/lib/ai";
 import TagInput from "@/components/poem/TagInput";
 import { cn } from "@/lib/utils";
-import type { SeasonKey } from "@/types/poem";
+import type { SeasonKey, SolarTermKey } from "@/types/poem";
 import { COLLECTION_IDS } from "@/types/poem";
 import { m as motion, AnimatePresence } from "framer-motion";
 import { usePasswordGate } from "@/components/auth/PasswordGate";
@@ -27,7 +28,16 @@ const SEASONS: { key: SeasonKey; label: string; emoji: string }[] = [
 ];
 
 export default function WritePage() {
+  return (
+    <Suspense fallback={<div className="paper-texture min-h-screen" />}>
+      <WriteForm />
+    </Suspense>
+  );
+}
+
+function WriteForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const solarTerm = useSolarTerm();
   const { requirePassword } = usePasswordGate();
 
@@ -37,10 +47,19 @@ export default function WritePage() {
   const [content, setContent] = useState("");
   const [annotation, setAnnotation] = useState("");
   const [tags, setTags] = useState<string[]>([]);
-  const [selectedSeason, setSelectedSeason] = useState<SeasonKey>(solarTerm.season);
-  const [selectedSolarTerm, setSelectedSolarTerm] = useState(solarTerm.key);
+  // 同题创作预设：从 URL 读取 ?solarTerm / ?season（seasons 页「同题创作」入口传入）
+  const preselectTerm = (searchParams.get("solarTerm") || "") as SolarTermKey;
+  const preselectSeason = searchParams.get("season") as SeasonKey | null;
+  const preselectTermMeta = SOLAR_TERMS_META.find((x) => x.key === preselectTerm);
+  const [selectedSeason, setSelectedSeason] = useState<SeasonKey>(
+    preselectSeason || preselectTermMeta?.season || solarTerm.season
+  );
+  const [selectedSolarTerm, setSelectedSolarTerm] = useState<string>(
+    preselectTermMeta?.key || solarTerm.key
+  );
   const [isVertical, setIsVertical] = useState(false);
   const [visibility, setVisibility] = useState<"public" | "private">("public");
+  const [aiLoading, setAiLoading] = useState<"continue" | "parody" | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
@@ -81,6 +100,47 @@ export default function WritePage() {
       setSaving(false);
     }
   }, [title, author, dynasty, content, annotation, tags, selectedSeason, selectedSolarTerm, visibility, router]);
+
+  // AI 续写：在现有正文后追加 AI 生成的后续
+  const handleAiContinue = useCallback(async () => {
+    if (!content.trim()) { setError("请先写几句，再让 AI 续写"); return; }
+    setAiLoading("continue");
+    setError("");
+    try {
+      const text = await generateWrite("continue", {
+        title: title.trim() || undefined,
+        content: content.trim(),
+        author: author.trim() || undefined,
+        dynasty: dynasty.trim() || undefined,
+      });
+      setContent((c) => (c.trim() ? c.trim() + "\n" + text.trim() : text.trim()));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "AI 续写失败，请稍后再试");
+    } finally {
+      setAiLoading(null);
+    }
+  }, [title, content, author, dynasty]);
+
+  // AI 仿写：按主题/风格生成一首新诗填入正文
+  const handleAiParody = useCallback(async () => {
+    if (!title.trim() && !content.trim()) { setError("请填标题或写几句参考，供 AI 仿写"); return; }
+    setAiLoading("parody");
+    setError("");
+    try {
+      const text = await generateWrite("parody", {
+        title: title.trim() || undefined,
+        content: content.trim() || undefined,
+        author: author.trim() || undefined,
+        dynasty: dynasty.trim() || undefined,
+        style: `${displayTerm.name}节气主题`,
+      });
+      setContent(text.trim());
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "AI 仿写失败，请稍后再试");
+    } finally {
+      setAiLoading(null);
+    }
+  }, [title, content, author, dynasty, displayTerm.name]);
 
   return (
     <div className="paper-texture min-h-screen">
@@ -211,6 +271,26 @@ export default function WritePage() {
                 title="私密：仅自己可见"
               >
                 私密
+              </button>
+            </div>
+
+            {/* AI 续写 / 仿写 */}
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={handleAiContinue}
+                disabled={!!aiLoading}
+                className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-ink/10 text-ink-light hover:border-cinnabar/40 hover:text-cinnabar transition-all disabled:opacity-40"
+                title="AI 续写：在已有诗句后继续创作"
+              >
+                {aiLoading === "continue" ? "续写中…" : "✍️ AI 续写"}
+              </button>
+              <button
+                onClick={handleAiParody}
+                disabled={!!aiLoading}
+                className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-ink/10 text-ink-light hover:border-cinnabar/40 hover:text-cinnabar transition-all disabled:opacity-40"
+                title="AI 仿写：按主题或风格创作新诗"
+              >
+                {aiLoading === "parody" ? "仿写中…" : "🖋 AI 仿写"}
               </button>
             </div>
           </div>
