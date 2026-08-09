@@ -5,6 +5,7 @@
 // Canvas 绘制诗词竖排水墨卡片，支持下载 / 系统分享
 // ============================================================
 import { useEffect, useRef, useState, useCallback } from "react";
+import Image from "next/image";
 import { m as motion, AnimatePresence } from "framer-motion";
 import type { Poem, Collection } from "@/types/poem";
 import { getSolarTermMeta } from "@/lib/solarterms";
@@ -340,16 +341,17 @@ export default function ShareCard({ poem, collection, open, onClose }: ShareCard
 
             {/* 预览 */}
             <div className="p-5">
-              <div className="relative rounded-lg overflow-hidden shadow-ink bg-white/50">
+              <div className="relative rounded-lg overflow-hidden shadow-ink bg-white/50 aspect-[3/4]">
                 {dataUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <Image
                     src={dataUrl}
                     alt={poem.title}
-                    className="w-full block"
+                    fill
+                    sizes="(max-width: 768px) 90vw, 400px"
+                    className="object-contain"
                   />
                 ) : (
-                  <div className="aspect-[3/4] flex items-center justify-center text-ink-light text-sm">
+                  <div className="absolute inset-0 flex items-center justify-center text-ink-light text-sm">
                     {rendering ? "正在生成…" : "准备中…"}
                   </div>
                 )}

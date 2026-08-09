@@ -66,9 +66,17 @@ async function main() {
   const agent = await loadProxyAgent();
   const redis = new Redis({ url: REDIS_URL, token: REDIS_TOKEN });
 
-  const resp = await fetch(`${SITE}/api/poems`);
-  const data = await resp.json();
-  const poems = data.poems || data;
+  // 优先从 Redis 直接读取诗词列表（避免本地 fetch 走代理失败），HTTP 站点作回退
+  let poems = null;
+  try {
+    const cached = await redis.get("poems:all");
+    if (Array.isArray(cached)) poems = cached;
+  } catch { /* 读不到则走 HTTP */ }
+  if (!poems) {
+    const resp = await fetch(`${SITE}/api/poems`);
+    const data = await resp.json();
+    poems = data.poems || data;
+  }
   console.log(`拉取到 ${poems.length} 首诗`);
 
   let ok = 0, skip = 0, fail = 0, refill = 0;

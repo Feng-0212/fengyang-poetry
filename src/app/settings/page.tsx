@@ -34,6 +34,7 @@ import {
 } from "@/lib/api";
 import BackupSection from "@/components/settings/BackupSection";
 import BatchTagSection from "@/components/settings/BatchTagSection";
+import ClassicImportSection from "@/components/settings/ClassicImportSection";
 
 export default function SettingsPage() {
   const solarTerm = useSolarTerm();
@@ -617,6 +618,21 @@ export default function SettingsPage() {
               {seeding ? "添加中..." : "· 导入示例数据（7首） ·"}
             </button>
           </div>
+        </section>
+
+        {/* 经典诗词导入 */}
+        <section className="mb-8 p-6 rounded-xl bg-white/60 border border-ink/8">
+          <h2 className="font-[var(--font-mashan)] text-lg text-ink-dark mb-2">
+            经典诗词导入
+          </h2>
+          <p className="text-sm text-ink-light mb-4">
+            一键导入内置经典唐诗宋词（公版），快速充实你的诗库
+          </p>
+          <ClassicImportSection
+            poems={poems}
+            onNotify={(type, msg) => showNotification(type, msg)}
+            onDone={refresh}
+          />
         </section>
 
         {/* 备份与恢复 */}

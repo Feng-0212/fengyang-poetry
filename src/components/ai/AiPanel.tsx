@@ -4,6 +4,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { m as motion, AnimatePresence } from "framer-motion";
 import type { Poem } from "@/types/poem";
 import { generateCommentary, generateImage, getAiTags } from "@/lib/ai";
@@ -279,14 +280,15 @@ export default function AiPanel({
               onClick={(e) => e.stopPropagation()}
               className="bg-rice rounded-2xl overflow-hidden max-w-md w-full shadow-2xl"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={draftImg}
-                alt={poem.title}
-                loading="lazy"
-                decoding="async"
-                className="w-full aspect-square object-cover"
-              />
+              <div className="relative aspect-square w-full">
+                <Image
+                  src={draftImg}
+                  alt={poem.title}
+                  fill
+                  sizes="(max-width: 768px) 90vw, 400px"
+                  className="object-cover"
+                />
+              </div>
               <div className="p-4">
                 <div className="text-sm text-ink-dark font-medium mb-2 text-center">
                   《{poem.title}》· AI 配图

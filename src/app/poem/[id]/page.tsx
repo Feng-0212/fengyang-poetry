@@ -5,6 +5,7 @@
 
 import { use } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -39,6 +40,18 @@ export default function PoemDetailPage({ params }: Props) {
   const { requirePassword } = usePasswordGate();
   const [collection, setCollection] = useState<Collection | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const copyShareLink = async () => {
+    const url = `${window.location.origin}/share/${poem?.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      window.prompt("复制公开分享链接：", url);
+    }
+  };
 
   useEffect(() => {
     if (poem?.collectionId) {
@@ -262,14 +275,15 @@ export default function PoemDetailPage({ params }: Props) {
                     initial={{ opacity: 0, scale: 0.98 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.8, duration: 0.6 }}
-                    className="mb-8 rounded-lg overflow-hidden"
+                    className="mb-8 rounded-lg overflow-hidden relative aspect-video"
                     style={{ border: `1px solid ${sealColor}20` }}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                    <Image
                       src={poem.coverImage}
                       alt={poem.title}
-                      className="w-full aspect-video object-cover"
+                      fill
+                      sizes="(max-width: 768px) 100vw, 640px"
+                      className="object-cover"
                     />
                   </motion.div>
                 )}
@@ -442,6 +456,12 @@ export default function PoemDetailPage({ params }: Props) {
               className="inline-flex items-center gap-2 text-sm text-ink-light hover:text-cinnabar"
             >
               生成分享卡片
+            </button>
+            <button
+              onClick={copyShareLink}
+              className="inline-flex items-center gap-2 text-sm text-ink-light hover:text-cinnabar"
+            >
+              {copied ? "已复制 ✓" : "复制公开链接"}
             </button>
             <AiPanel
               poem={poem}
