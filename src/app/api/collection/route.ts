@@ -5,34 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Collection } from "@/types/poem";
 import { requireUser } from "@/lib/user";
-
-async function getKv() {
-  try {
-    const mod = await import("@upstash/redis");
-    if (mod.Redis) {
-      const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || "";
-      const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN || "";
-      if (url) return new mod.Redis({ url, token });
-    }
-  } catch {}
-  return null;
-}
-
-const KV_KEY = "collections:all";
-
-async function getCollections(): Promise<Collection[]> {
-  const kv = await getKv();
-  if (kv) {
-    const data = await kv.get<Collection[]>(KV_KEY);
-    return data || [];
-  }
-  return [];
-}
-
-async function setCollections(cols: Collection[]): Promise<void> {
-  const kv = await getKv();
-  if (kv) await kv.set(KV_KEY, cols);
-}
+import { getCollections, setCollections } from "@/lib/store";
 
 export async function GET() {
   const collections = await getCollections();

@@ -92,6 +92,33 @@
 
 ---
 
+## 🏗️ 模块化架构
+
+项目按职责清晰分层，模块之间单向依赖：
+
+```
+页面层   src/app/**（RSC + Client 页面）
+   ↓
+组件层   src/components/**（Navbar / PoemCard / AiPanel / CommentSection / FollowButton ...）
+   ↓
+API 层   src/app/api/**（REST 路由：鉴权 / 业务 / AI / 备份）
+   ↓
+服务层   src/lib/**（业务逻辑与数据访问）
+   │   ├── store.ts     统一数据访问层（诗词/藏/评论读写，Redis + 内存回退）
+   │   ├── user.ts      账号/会话/可见性/关注/管理员继承
+   │   ├── ai.ts        客户端 AI 能力（赏析/配图/标签/续写/仿写）
+   │   ├── kv.ts        Redis 封装（生产）+ 内存回退（本地）
+   │   ├── ratelimit.ts 限流 · solarterms.ts 节气元数据 · tags.ts 标签池 ...
+   └── types/poem.ts    共享类型（Poem/Collection/User/Comment）
+```
+
+- **数据层收敛**：所有 API 路由经 `lib/store.ts` 读写数据，不再各自重复连接 Redis（消除 ~300 行重复代码）
+- **鉴权统一**：写操作一律 `requireUser`（Bearer Token），读接口 `optionalUser` 按可见性过滤
+- **客户端收敛**：页面经 `lib/api.ts` 统一调用（自动携带 Token + 短 TTL 缓存去重），AI 能力经 `lib/ai.ts`
+- **按需加载**：SearchModal / ShareCard / AiPanel 动态导入，低频页 `prefetch={false}`
+
+---
+
 ## 📦 快速开始
 
 ```bash
@@ -148,14 +175,15 @@ fengyang-poetry/
 │   ├── components/
 │   │   ├── poem/                   # PoemCard, TtsButton, TtsSequenceButton ...
 │   │   ├── auth/                   # PasswordGate（登录态 Provider）
-│   │   ├── layout/  search/  seals/  settings/  share/
+│   │   ├── layout/  search/  seals/  settings/  share/  user/  comment/
 │   ├── hooks/                      # useSolarTerm, usePoem, useCollection ...
 │   ├── lib/
-│   │   ├── user.ts                 # 用户/会话/可见性/管理员继承（服务端）
+│   │   ├── store.ts                # 统一数据访问层（诗词/藏/评论读写，Redis + 内存回退）
+│   │   ├── user.ts                 # 用户/会话/可见性/关注/管理员继承（服务端）
 │   │   ├── auth.ts                 # 客户端会话工具（token）
 │   │   ├── api.ts                  # 客户端 API 封装（Bearer 自动携带 + 缓存）
 │   │   ├── kv.ts  db.ts  ai.ts  ratelimit.ts  ...
-│   └── types/poem.ts               # 类型定义（Poem/Collection/User）
+│   └── types/poem.ts               # 类型定义（Poem/Collection/User/Comment）
 ├── scripts/                        # 维护脚本（TTS 预生成 / 回退图生成）
 ├── public/                         # 静态资源 + PWA + 静态音频 + 回退图池
 ├── docs/                           # 交付记录 / 改动汇总 / 修复记录 / 部署清单 / PRD

@@ -5,50 +5,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Poem } from "@/types/poem";
 import { requireUser, optionalUser, isPoemVisible } from "@/lib/user";
-
-async function getKv() {
-  try {
-    const mod = await import("@upstash/redis");
-    if (mod.Redis) {
-      // 兼容 Upstash Redis 和 Vercel KV 两种环境变量格式
-      const url =
-        process.env.UPSTASH_REDIS_REST_URL ||
-        process.env.KV_REST_API_URL ||
-        process.env.REDIS_URL ||
-        "";
-      const token =
-        process.env.UPSTASH_REDIS_REST_TOKEN ||
-        process.env.KV_REST_API_TOKEN ||
-        "";
-      if (url) {
-        return new mod.Redis({ url, token });
-      }
-    }
-  } catch {}
-  return null;
-}
-
-const KV_KEY = "poems:all";
-
-async function getPoems(): Promise<Poem[]> {
-  const kv = await getKv();
-  if (kv) {
-    const data = await kv.get<Poem[]>(KV_KEY);
-    return data || [];
-  }
-  // 本地 dev 内存回退
-  if (!(globalThis as any).__poems) (globalThis as any).__poems = [];
-  return (globalThis as any).__poems;
-}
-
-async function setPoems(poems: Poem[]): Promise<void> {
-  const kv = await getKv();
-  if (kv) {
-    await kv.set(KV_KEY, poems);
-  } else {
-    (globalThis as any).__poems = poems;
-  }
-}
+import { getPoems, setPoems } from "@/lib/store";
+import { getKv } from "@/lib/kv";
 
 // ============================================================
 // 回收站自动清理：超过 30 天的软删除诗词物理清除

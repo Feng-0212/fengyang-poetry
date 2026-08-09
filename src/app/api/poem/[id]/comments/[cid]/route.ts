@@ -5,58 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Poem, PoemComment } from "@/types/poem";
 import { requireUser } from "@/lib/user";
-
-async function getKv() {
-  try {
-    const mod = await import("@upstash/redis");
-    if (mod.Redis) {
-      const url =
-        process.env.UPSTASH_REDIS_REST_URL ||
-        process.env.KV_REST_API_URL ||
-        process.env.REDIS_URL ||
-        "";
-      const token =
-        process.env.UPSTASH_REDIS_REST_TOKEN ||
-        process.env.KV_REST_API_TOKEN ||
-        "";
-      if (url) return new mod.Redis({ url, token });
-    }
-  } catch {}
-  return null;
-}
-
-const POEMS_KEY = "poems:all";
-
-async function getComments(poemId: string): Promise<PoemComment[]> {
-  const kv = await getKv();
-  if (kv) {
-    return (await kv.get<PoemComment[]>(`comments:${poemId}`)) || [];
-  }
-  if (!(globalThis as any).__comments) (globalThis as any).__comments = {};
-  return (globalThis as any).__comments[poemId] || [];
-}
-
-async function setComments(poemId: string, comments: PoemComment[]): Promise<void> {
-  const kv = await getKv();
-  if (kv) {
-    await kv.set(`comments:${poemId}`, comments);
-  } else {
-    (globalThis as any).__comments = (globalThis as any).__comments || {};
-    (globalThis as any).__comments[poemId] = comments;
-  }
-}
-
-async function getPoem(id: string): Promise<Poem | null> {
-  const kv = await getKv();
-  if (kv) {
-    const poems = (await kv.get<Poem[]>(POEMS_KEY)) || [];
-    return poems.find((p) => p.id === id) || null;
-  }
-  if ((globalThis as any).__poems) {
-    return ((globalThis as any).__poems as Poem[]).find((p) => p.id === id) || null;
-  }
-  return null;
-}
+import { getPoems, getComments, setComments } from "@/lib/store";
 
 export async function DELETE(
   req: NextRequest,
@@ -73,7 +22,7 @@ export async function DELETE(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
   const comment = comments[idx];
-  const poem = await getPoem(id);
+  const poem = (await getPoems()).find((p) => p.id === id) || null;
   const isPoemOwner = poem?.ownerId === user.id;
   // 仅评论者本人或诗作者可删
   if (comment.userId !== user.id && !isPoemOwner) {

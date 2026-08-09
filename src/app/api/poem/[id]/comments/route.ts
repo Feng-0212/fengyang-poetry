@@ -6,66 +6,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Poem, PoemComment } from "@/types/poem";
 import { requireUser, optionalUser, isPoemVisible } from "@/lib/user";
+import { getPoems, getComments, setComments } from "@/lib/store";
 
-async function getKv() {
-  try {
-    const mod = await import("@upstash/redis");
-    if (mod.Redis) {
-      const url =
-        process.env.UPSTASH_REDIS_REST_URL ||
-        process.env.KV_REST_API_URL ||
-        process.env.REDIS_URL ||
-        "";
-      const token =
-        process.env.UPSTASH_REDIS_REST_TOKEN ||
-        process.env.KV_REST_API_TOKEN ||
-        "";
-      if (url) return new mod.Redis({ url, token });
-    }
-  } catch {}
-  return null;
-}
-
-const POEMS_KEY = "poems:all";
 const MAX_COMMENT_LEN = 500;
-
-async function getPoem(id: string): Promise<Poem | null> {
-  const kv = await getKv();
-  if (kv) {
-    const poems = (await kv.get<Poem[]>(POEMS_KEY)) || [];
-    return poems.find((p) => p.id === id) || null;
-  }
-  if ((globalThis as any).__poems) {
-    return ((globalThis as any).__poems as Poem[]).find((p) => p.id === id) || null;
-  }
-  return null;
-}
-
-async function getComments(poemId: string): Promise<PoemComment[]> {
-  const kv = await getKv();
-  if (kv) {
-    return (await kv.get<PoemComment[]>(`comments:${poemId}`)) || [];
-  }
-  if (!(globalThis as any).__comments) (globalThis as any).__comments = {};
-  return (globalThis as any).__comments[poemId] || [];
-}
-
-async function setComments(poemId: string, comments: PoemComment[]): Promise<void> {
-  const kv = await getKv();
-  if (kv) {
-    await kv.set(`comments:${poemId}`, comments);
-  } else {
-    (globalThis as any).__comments = (globalThis as any).__comments || {};
-    (globalThis as any).__comments[poemId] = comments;
-  }
-}
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const poem = await getPoem(id);
+  const poem = (await getPoems()).find((p) => p.id === id) || null;
   if (!poem || poem.deletedAt) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
@@ -88,7 +38,7 @@ export async function POST(
   const user = auth.user;
 
   const { id } = await params;
-  const poem = await getPoem(id);
+  const poem = (await getPoems()).find((p) => p.id === id) || null;
   if (!poem || poem.deletedAt) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }

@@ -7,48 +7,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Poem } from "@/types/poem";
 import { requireUser } from "@/lib/user";
+import { getPoems, setPoems } from "@/lib/store";
 import { TAG_POOL } from "@/lib/tags";
 
-const KV_KEY = "poems:all";
 const MAX_CONCURRENT = 3; // 同时并发 AI 请求数
-
-async function getKv() {
-  try {
-    const mod = await import("@upstash/redis");
-    if (mod.Redis) {
-      const url =
-        process.env.UPSTASH_REDIS_REST_URL ||
-        process.env.KV_REST_API_URL ||
-        process.env.REDIS_URL ||
-        "";
-      const token =
-        process.env.UPSTASH_REDIS_REST_TOKEN ||
-        process.env.KV_REST_API_TOKEN ||
-        "";
-      if (url) return new mod.Redis({ url, token });
-    }
-  } catch {}
-  return null;
-}
-
-async function getPoems(): Promise<Poem[]> {
-  const kv = await getKv();
-  if (kv) {
-    const data = await kv.get<Poem[]>(KV_KEY);
-    return data || [];
-  }
-  if (!(globalThis as any).__poems) (globalThis as any).__poems = [];
-  return (globalThis as any).__poems;
-}
-
-async function setPoems(poems: Poem[]): Promise<void> {
-  const kv = await getKv();
-  if (kv) {
-    await kv.set(KV_KEY, poems);
-  } else {
-    (globalThis as any).__poems = poems;
-  }
-}
 
 function resolveConfig(req: Request) {
   const h = req.headers;

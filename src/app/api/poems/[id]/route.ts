@@ -5,46 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Poem } from "@/types/poem";
 import { requireUser, canModifyPoem } from "@/lib/user";
-
-const KV_KEY = "poems:all";
-
-async function getKv() {
-  try {
-    const mod = await import("@upstash/redis");
-    if (mod.Redis) {
-      const url =
-        process.env.UPSTASH_REDIS_REST_URL ||
-        process.env.KV_REST_API_URL ||
-        process.env.REDIS_URL ||
-        "";
-      const token =
-        process.env.UPSTASH_REDIS_REST_TOKEN ||
-        process.env.KV_REST_API_TOKEN ||
-        "";
-      if (url) return new mod.Redis({ url, token });
-    }
-  } catch {}
-  return null;
-}
-
-async function getPoems(): Promise<Poem[]> {
-  const kv = await getKv();
-  if (kv) {
-    const data = await kv.get<Poem[]>(KV_KEY);
-    return data || [];
-  }
-  if (!(globalThis as any).__poems) (globalThis as any).__poems = [];
-  return (globalThis as any).__poems;
-}
-
-async function setPoems(poems: Poem[]): Promise<void> {
-  const kv = await getKv();
-  if (kv) {
-    await kv.set(KV_KEY, poems);
-  } else {
-    (globalThis as any).__poems = poems;
-  }
-}
+import { getPoems, setPoems } from "@/lib/store";
 
 // PATCH /api/poems/[id] — 局部更新，返回更新后的 poem
 export async function PATCH(
