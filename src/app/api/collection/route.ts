@@ -1,8 +1,10 @@
 // ============================================================
 // API: 藏集合 CRUD（GET 列表 / POST 新建）
+// 多用户：GET 公开可见；POST 需登录并归属当前用户
 // ============================================================
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import type { Collection } from "@/types/poem";
+import { requireUser } from "@/lib/user";
 
 async function getKv() {
   try {
@@ -37,7 +39,12 @@ export async function GET() {
   return NextResponse.json({ collections });
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  // 登录校验
+  const auth = await requireUser(req);
+  if ("error" in auth) return auth.error;
+  const user = auth.user;
+
   const body = await req.json();
   const collections = await getCollections();
 
@@ -48,6 +55,7 @@ export async function POST(req: Request) {
     updatedAt: body.updatedAt || Date.now(),
     poemCount: body.poemCount || 0,
     isSystem: false,
+    ownerId: user.id,
   };
 
   // 避免重复

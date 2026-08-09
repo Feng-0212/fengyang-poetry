@@ -7,6 +7,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSolarTerm } from "@/hooks/useSolarTerm";
 import { useSearch } from "@/components/layout/ClientShell";
+import { usePasswordGate } from "@/components/auth/PasswordGate";
 import SealStamp from "@/components/seals/SealStamp";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +22,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const solarTerm = useSolarTerm();
   const { openSearch } = useSearch();
+  const { user, logout } = usePasswordGate();
 
   return (
     <nav className="navbar pt-safe">
@@ -75,7 +77,7 @@ export default function Navbar() {
           </button>
         </div>
 
-        {/* 右侧：导航链接 */}
+        {/* 右侧：导航链接 + 用户区 */}
         <div className="flex items-center gap-4 md:gap-6">
           {NAV_LINKS.map((link) => (
             <Link
@@ -90,6 +92,39 @@ export default function Navbar() {
               {link.label}
             </Link>
           ))}
+
+          {/* 用户区 */}
+          {user ? (
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <span
+                className="inline-flex items-center gap-1.5 text-sm text-ink-dark"
+                title={user.email}
+              >
+                <span
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-xs text-white"
+                  style={{ backgroundColor: "#C14A3F" }}
+                >
+                  {user.name.slice(0, 1)}
+                </span>
+                <span className="hide-mobile max-w-[6rem] truncate">{user.name}</span>
+              </span>
+              <button
+                onClick={() => logout()}
+                className="text-xs px-2.5 py-1 rounded-full text-ink-light hover:bg-ink/5 border border-ink/10 transition-colors"
+                title="退出登录"
+              >
+                退出
+              </button>
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs text-white transition-all hover:opacity-90"
+              style={{ backgroundColor: "#C14A3F" }}
+            >
+              登录 / 注册
+            </Link>
+          )}
         </div>
       </div>
     </nav>

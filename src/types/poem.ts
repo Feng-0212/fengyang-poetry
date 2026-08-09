@@ -62,6 +62,10 @@ export interface Poem {
   solarTerm: SolarTermKey;
   isFavorite: boolean;
   favoriteCount: number; // 冗余计数：与 isFavorite 同步（收藏=1，未收藏=0），仅作展示兼容，不代表多人收藏数
+  // 多用户：作品归属与可见性
+  ownerId?: string; // 作者用户 ID（旧数据继承给管理员前为空）
+  ownerName?: string; // 作者展示名（冗余存储，避免联查）
+  visibility?: "public" | "private"; // 默认 public；private 仅本人可见
   createdAt: number;
   updatedAt: number;
   deletedAt?: number; // 回收站
@@ -85,9 +89,28 @@ export interface Collection {
   background: string; // 背景描述关键词
   layout: CollectionLayout;
   isSystem: boolean; // 系统预置
+  ownerId?: string; // 归属用户（系统预置藏归管理员）
   createdAt: number;
   updatedAt: number;
   poemCount: number; // 缓存
+}
+
+// ============================================================
+// 用户与会话
+// ============================================================
+export interface User {
+  id: string;
+  email: string; // 小写存储，唯一
+  name: string; // 展示名
+  passwordHash: string; // 格式 salt:hash（scrypt）
+  createdAt: number;
+}
+
+/** 可安全返回前端的用户信息（不含密码哈希） */
+export interface PublicUser {
+  id: string;
+  email: string;
+  name: string;
 }
 
 // 预置藏 ID 常量

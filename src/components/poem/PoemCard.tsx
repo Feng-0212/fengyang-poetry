@@ -87,6 +87,11 @@ export default function PoemCard({ poem, index = 0, collection }: Props) {
                   )}
                 </span>
               )}
+              {poem.ownerName && (
+                <span className="text-[11px] text-ink-light/60">
+                  @{poem.ownerName}
+                </span>
+              )}
               <span className="text-xs text-ink-light">
                 {formatRelativeTime(poem.createdAt)}
               </span>

@@ -1,10 +1,38 @@
 // ============================================================
 // 服务端 API 客户端 — 共享数据层
 // ============================================================
-import type { Poem, Collection } from "@/types/poem";
-import { PASSWORD_KEY, clearStoredPassword } from "./auth";
+import type { Poem, Collection, PublicUser } from "@/types/poem";
+import { getToken, clearSession } from "./auth";
 
 const BASE = "/api";
+
+async function apiFetch<T>(
+  url: string,
+  init?: RequestInit & { requireAuth?: boolean }
+): Promise<T> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json"
+  };
+  // 自动带上登录 token（若有）
+  const token = getToken();
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const res = await fetch(`${BASE}${url}`, {
+    headers,
+    ...init
+  });
+  if (!res.ok) {
+    // 401 = 未登录/登录过期，清本地会话
+    if (res.status === 401) {
+      clearSession();
+      const body = await res.json().catch(() => ({}));
+      const err = new Error(body.message || "请先登录");
+      (err as any).status = 401;
+      throw err;
+    }
+    throw new Error(`API ${res.status}: ${res.statusText}`);
+  }
+  return res.json();
+}
 
 // ============================================================
 // 诗词列表短 TTL 缓存（客户端内存）
@@ -31,45 +59,6 @@ async function fetchAllRaw(): Promise<Poem[]> {
     return res.poems;
   })();
   return inflight;
-}
-
-async function apiFetch<T>(
-  url: string,
-  init?: RequestInit & { requireAuth?: boolean }
-): Promise<T> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json"
-  };
-  // 写操作自动带上密码 header（从 localStorage 读）
-  if (init?.requireAuth && typeof window !== "undefined") {
-    const pw = localStorage.getItem(PASSWORD_KEY) || "";
-    if (pw) headers["x-poem-password"] = pw;
-  }
-  const res = await fetch(`${BASE}${url}`, {
-    headers,
-    ...init
-  });
-  // 每次写操作后清除本地存储的密码，下次必须重新输入
-  if (init?.method && !["GET", "HEAD", "OPTIONS"].includes(init.method)) {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(PASSWORD_KEY);
-    }
-  }
-  if (!res.ok) {
-    // 401 = 密码错误，抛特定错误让前端弹窗重输
-    if (res.status === 401) {
-      const body = await res.json().catch(() => ({}));
-      // 清除错误密码，下次写操作需重新输入
-      if (typeof window !== "undefined") {
-        clearStoredPassword();
-      }
-      const err = new Error(body.message || "密码错误或未提供");
-      (err as any).status = 401;
-      throw err;
-    }
-    throw new Error(`API ${res.status}: ${res.statusText}`);
-  }
-  return res.json();
 }
 
 // ============================================================
@@ -229,4 +218,53 @@ export async function runBatchAiTags(
     invalidatePoemsCache();
     return res;
   });
+}
+
+// ============================================================
+// 账号与会话
+// ============================================================
+
+export interface AuthResponse {
+  token: string;
+  user: PublicUser;
+  inherited?: { poems: number; collections: number };
+}
+
+/** 注册（管理员邮箱自动继承旧数据） */
+export async function apiRegister(
+  email: string,
+  password: string,
+  name: string
+): Promise<AuthResponse> {
+  return apiFetch<AuthResponse>("/auth/register", {
+    method: "POST",
+    body: JSON.stringify({ email, password, name }),
+  });
+}
+
+/** 登录 */
+export async function apiLogin(email: string, password: string): Promise<AuthResponse> {
+  return apiFetch<AuthResponse>("/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+/** 注销（删除服务端会话） */
+export async function apiLogout(): Promise<void> {
+  try {
+    await apiFetch("/auth/logout", { method: "POST" });
+  } catch {
+    /* 忽略网络错误 */
+  }
+}
+
+/** 当前登录用户（未登录返回 null） */
+export async function apiMe(): Promise<PublicUser | null> {
+  try {
+    const res = await apiFetch<{ user: PublicUser }>("/auth/me");
+    return res.user;
+  } catch {
+    return null;
+  }
 }

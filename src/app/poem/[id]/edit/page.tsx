@@ -65,6 +65,7 @@ export default function EditPoemPage({ params }: Props) {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [hasChanges, setHasChanges] = useState(false);
+  const [visibility, setVisibility] = useState<"public" | "private">("public");
 
   // 初始化表单数据
   useEffect(() => {
@@ -77,6 +78,7 @@ export default function EditPoemPage({ params }: Props) {
       setTags(poem.tags || []);
       setSelectedSeason(poem.season);
       setSelectedSolarTerm(poem.solarTerm);
+      setVisibility(poem.visibility === "private" ? "private" : "public");
     }
   }, [poem]);
 
@@ -91,9 +93,10 @@ export default function EditPoemPage({ params }: Props) {
       (annotation || "") !== (poem.annotation || "") ||
       JSON.stringify(tags) !== JSON.stringify(poem.tags || []) ||
       selectedSeason !== poem.season ||
-      selectedSolarTerm !== poem.solarTerm;
+      selectedSolarTerm !== poem.solarTerm ||
+      (visibility === "private" ? "private" : "public") !== (poem.visibility === "private" ? "private" : "public");
     setHasChanges(changed);
-  }, [poem, title, content, annotation, tags, selectedSeason, selectedSolarTerm]);
+  }, [poem, title, content, annotation, tags, selectedSeason, selectedSolarTerm, visibility]);
 
   const filteredSolarTerms = SOLAR_TERMS_META.filter(
     (st) => st.season === selectedSeason
@@ -121,6 +124,7 @@ export default function EditPoemPage({ params }: Props) {
           solarTerm: selectedSolarTerm,
           annotation: annotation.trim() || undefined,
           tags,
+          visibility,
         });
         setSaved(true);
         setTimeout(() => router.push(`/poem/${poem.id}`), 1200);
@@ -131,7 +135,7 @@ export default function EditPoemPage({ params }: Props) {
         setSaving(false);
       }
     });
-  }, [requirePassword, poem, title, author, dynasty, content, annotation, tags, selectedSeason, selectedSolarTerm, router]);
+  }, [requirePassword, poem, title, author, dynasty, content, annotation, tags, selectedSeason, selectedSolarTerm, visibility, router]);
 
   if (loading) {
     return (
@@ -372,6 +376,20 @@ export default function EditPoemPage({ params }: Props) {
                 />
               </svg>
               {isVertical ? "竖排书写" : "横排书写"}
+            </button>
+
+            {/* 可见性切换 */}
+            <button
+              onClick={() => setVisibility(visibility === "public" ? "private" : "public")}
+              className={cn(
+                "flex items-center gap-2 text-xs px-3 py-1.5 rounded-full border transition-all",
+                visibility === "private"
+                  ? "border-cinnabar/40 text-cinnabar bg-cinnabar/5"
+                  : "border-ink/10 text-ink-light hover:border-ink/20"
+              )}
+              title={visibility === "public" ? "公开：所有人可见" : "私密：仅自己可见"}
+            >
+              {visibility === "public" ? "🔓 公开" : "🔒 私密"}
             </button>
 
             {/* 字数统计 */}

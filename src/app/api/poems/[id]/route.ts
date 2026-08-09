@@ -4,7 +4,7 @@
 // ============================================================
 import { NextRequest, NextResponse } from "next/server";
 import type { Poem } from "@/types/poem";
-import { checkPassword } from "@/lib/auth";
+import { requireUser, canModifyPoem } from "@/lib/user";
 
 const KV_KEY = "poems:all";
 
@@ -51,8 +51,10 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const authErr = checkPassword(req);
-  if (authErr) return authErr;
+  // 登录校验
+  const auth = await requireUser(req);
+  if ("error" in auth) return auth.error;
+  const user = auth.user;
 
   try {
     const { id } = await params;
@@ -63,6 +65,11 @@ export async function PATCH(
 
     if (idx === -1) {
       return NextResponse.json({ error: "Poem not found" }, { status: 404 });
+    }
+
+    // 仅本人可改
+    if (!canModifyPoem(poems[idx], user)) {
+      return NextResponse.json({ error: "forbidden", message: "无权修改他人的诗词" }, { status: 403 });
     }
 
     // 只允许安全字段被外部更新（tags / aiAnnotation / aiImageUrl）

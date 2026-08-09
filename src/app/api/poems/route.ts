@@ -1,9 +1,10 @@
 // ============================================================
 // API: 诗词 CRUD（Upstash Redis 持久化）
+// 多用户：GET 按可见性过滤（public 或本人 private）；POST 需登录并归属当前用户
 // ============================================================
 import { NextRequest, NextResponse } from "next/server";
 import type { Poem } from "@/types/poem";
-import { checkPassword } from "@/lib/auth";
+import { requireUser, optionalUser, isPoemVisible } from "@/lib/user";
 
 async function getKv() {
   try {
@@ -74,21 +75,25 @@ async function lazyPurgeTrash(): Promise<void> {
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     // 惰性清理超期回收站（不阻塞响应）
     void lazyPurgeTrash();
+    const user = await optionalUser(req);
     const poems = await getPoems();
-    return NextResponse.json({ poems });
+    // 可见性过滤：public（含无 owner 的旧数据）或本人 private；同时剔除软删除
+    const visible = poems.filter((p) => !p.deletedAt && isPoemVisible(p, user?.id));
+    return NextResponse.json({ poems: visible });
   } catch (e) {
     return NextResponse.json({ error: "Failed to fetch poems" }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
-  // 密码校验
-  const authErr = checkPassword(req);
-  if (authErr) return authErr;
+  // 登录校验
+  const auth = await requireUser(req);
+  if ("error" in auth) return auth.error;
+  const user = auth.user;
 
   try {
     const body = await req.json();
@@ -107,6 +112,9 @@ export async function POST(req: NextRequest) {
       tags: Array.isArray(body.tags) ? body.tags : [],
       isFavorite: false,
       favoriteCount: 0,
+      ownerId: user.id,
+      ownerName: user.name,
+      visibility: body.visibility === "private" ? "private" : "public",
       createdAt: now,
       updatedAt: now,
     };

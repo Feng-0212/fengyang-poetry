@@ -306,6 +306,17 @@ export default function PoemDetailPage({ params }: Props) {
                     <span>{poem.author || "佚名"}</span>
                     {(poem.author || poem.dynasty) && <span> · </span>}
                     <span>{poem.dynasty || "佚名"}</span>
+                    {poem.ownerName && (
+                      <>
+                        <span> · </span>
+                        <span className="text-cinnabar/80">@{poem.ownerName}</span>
+                      </>
+                    )}
+                    {poem.visibility === "private" && (
+                      <span className="ml-2 text-xs px-1.5 py-0.5 rounded-full bg-ink/5 text-ink-light/60" title="仅自己可见">
+                        🔒 私密
+                      </span>
+                    )}
                   </div>
                 )}
 

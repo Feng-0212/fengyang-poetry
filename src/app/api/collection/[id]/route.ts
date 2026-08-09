@@ -3,7 +3,7 @@
 // ============================================================
 import { NextRequest, NextResponse } from "next/server";
 import type { Poem, Collection } from "@/types/poem";
-import { checkPassword } from "@/lib/auth";
+import { requireUser, canModifyCollection } from "@/lib/user";
 
 async function getKv() {
   try {
@@ -54,19 +54,27 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const authErr = checkPassword(req);
-  if (authErr) return authErr;
+  // 登录校验 + 归属校验
+  const auth = await requireUser(req);
+  if ("error" in auth) return auth.error;
+  const user = auth.user;
 
   const { id } = await params;
+  const cols = await getCollections();
+  const col = cols.find((c) => c.id === id);
+  if (!col) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!canModifyCollection(col, user)) {
+    return NextResponse.json({ error: "forbidden", message: "无权删除他人的藏" }, { status: 403 });
+  }
+
   // 删除该藏下所有诗词
   let poems = await getPoems();
   const before = poems.length;
-  poems = poems.filter((p) => p.collectionId !== id);
+  poems = poems.filter((p) => p.collectionId !== id || p.ownerId !== user.id);
   const deleted = before - poems.length;
   await setPoems(poems);
 
   // 删除藏本身
-  const cols = await getCollections();
   const newCols = cols.filter((c) => c.id !== id);
   await setCollections(newCols);
 

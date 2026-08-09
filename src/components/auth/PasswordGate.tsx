@@ -1,26 +1,41 @@
 // ============================================================
-// 密码门 — 写诗/改诗/删诗操作保护
-// 前端仅收集密码输入，校验由服务端 POEM_PASSWORD 承担（见 src/lib/auth.ts）
+// 登录态 Provider（原 PasswordGate 演进）
+// - 挂载时用本地 token 恢复会话（GET /api/auth/me）
+// - requirePassword(action)：已登录直接执行；未登录跳转 /login
+// - 提供 login/logout 供登录页与导航栏使用
+// 兼容旧接口：usePasswordGate() 返回 { authenticated, user, loading, requirePassword, logout }
 // ============================================================
 "use client";
 
-import { useState, createContext, useContext, useCallback, type ReactNode } from "react";
-import { m as motion, AnimatePresence } from "framer-motion";
-import { setStoredPassword } from "@/lib/auth";
-
-// 前端不再内置/硬编码任何密码（避免把密码打进 bundle 泄露）。
-// 可选配置 NEXT_PUBLIC_POEM_PASSWORD 仅用于本地 UX 预校验；
-// 生产环境的安全校验完全由服务端 POEM_PASSWORD 承担（见 src/lib/auth.ts）。
-const PASSWORD = process.env.NEXT_PUBLIC_POEM_PASSWORD || "";
+import {
+  useState,
+  createContext,
+  useContext,
+  useCallback,
+  useEffect,
+  type ReactNode,
+} from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { apiMe, apiLogout } from "@/lib/api";
+import { getStoredUser, setStoredUser, clearSession } from "@/lib/auth";
+import type { PublicUser } from "@/types/poem";
 
 interface AuthCtx {
   authenticated: boolean;
+  user: PublicUser | null;
+  loading: boolean;
   requirePassword: (action: () => void) => void;
+  logout: () => Promise<void>;
+  setUser: (u: PublicUser) => void;
 }
 
 const AuthContext = createContext<AuthCtx>({
   authenticated: false,
+  user: null,
+  loading: true,
   requirePassword: () => {},
+  logout: async () => {},
+  setUser: () => {},
 });
 
 export function usePasswordGate() {
@@ -28,101 +43,55 @@ export function usePasswordGate() {
 }
 
 export function PasswordProvider({ children }: { children: ReactNode }) {
-  const [showPrompt, setShowPrompt] = useState(false);
-  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
-  const [error, setError] = useState("");
+  const [user, setUserState] = useState<PublicUser | null>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const pathname = usePathname();
 
-  // 每次操作都要求输入密码（不缓存认证状态）
-  const requirePassword = useCallback((action: () => void) => {
-    setPendingAction(() => action);
-    setShowPrompt(true);
-    setError("");
+  // 挂载时恢复会话：本地有 token 则向服务端确认
+  useEffect(() => {
+    const cached = getStoredUser();
+    if (cached) setUserState(cached);
+    apiMe().then((u) => {
+      setUserState(u);
+      if (u) setStoredUser(u);
+      else clearSession();
+      setLoading(false);
+    });
   }, []);
 
-  const verifyPassword = useCallback((pw: string) => {
-    // 前端不再本地校验（PASSWORD 为空时直接通过）：
-    // 输入存入 localStorage，由服务端 POEM_PASSWORD 校验写操作（见 src/lib/api.ts 401 处理）
-    if (PASSWORD && pw !== PASSWORD) {
-      setError("密码错误");
-      return false;
-    }
-    setShowPrompt(false);
-    const act = pendingAction;
-    setPendingAction(null);
-    if (act) {
-      setStoredPassword(pw);
-      setTimeout(() => act(), 50);
-    }
-    return true;
-  }, [pendingAction]);
+  const requirePassword = useCallback(
+    (action: () => void) => {
+      if (user) {
+        action();
+        return;
+      }
+      // 未登录：跳登录页，登录后回到当前页
+      const next = pathname ? `?next=${encodeURIComponent(pathname)}` : "";
+      router.push(`/login${next}`);
+    },
+    [user, pathname, router]
+  );
 
-  const cancel = useCallback(() => {
-    setShowPrompt(false);
-    setPendingAction(null);
-    setError("");
-  }, []);
+  const logout = useCallback(async () => {
+    await apiLogout();
+    clearSession();
+    setUserState(null);
+    router.push("/");
+  }, [router]);
 
   return (
-    <AuthContext.Provider value={{ authenticated: false, requirePassword }}>
+    <AuthContext.Provider
+      value={{
+        authenticated: !!user,
+        user,
+        loading,
+        requirePassword,
+        logout,
+        setUser: setUserState,
+      }}
+    >
       {children}
-      <AnimatePresence>
-        {showPrompt && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm"
-            onClick={cancel}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-xl p-8 shadow-2xl max-w-sm w-full mx-4"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="font-[var(--font-mashan)] text-xl text-ink-dark text-center mb-2">
-                授权操作
-              </h3>
-              <p className="text-sm text-ink-light text-center mb-6">
-                请输入管理密码
-              </p>
-              <input
-                type="password"
-                autoFocus
-                placeholder="输入密码..."
-                className="w-full px-4 py-2.5 rounded-lg border border-ink/15 text-ink-dark text-sm outline-none focus:border-cinnabar/40 transition-colors mb-3"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") verifyPassword((e.target as HTMLInputElement).value);
-                  if (e.key === "Escape") cancel();
-                }}
-                onChange={() => setError("")}
-              />
-              {error && (
-                <p className="text-xs text-red-500 text-center mb-3">{error}</p>
-              )}
-              <div className="flex gap-3">
-                <button
-                  onClick={cancel}
-                  className="flex-1 py-2.5 rounded-lg text-sm border border-ink/15 text-ink-light hover:text-ink transition-colors"
-                >
-                  取消
-                </button>
-                <button
-                  onClick={() => {
-                    const input = document.querySelector<HTMLInputElement>('input[type="password"]');
-                    if (input) verifyPassword(input.value);
-                  }}
-                  className="flex-1 py-2.5 rounded-lg text-sm text-white transition-all"
-                  style={{ backgroundColor: "#C14A3F" }}
-                >
-                  确认
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </AuthContext.Provider>
   );
 }

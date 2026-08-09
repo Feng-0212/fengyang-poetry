@@ -40,6 +40,7 @@ export default function WritePage() {
   const [selectedSeason, setSelectedSeason] = useState<SeasonKey>(solarTerm.season);
   const [selectedSolarTerm, setSelectedSolarTerm] = useState(solarTerm.key);
   const [isVertical, setIsVertical] = useState(false);
+  const [visibility, setVisibility] = useState<"public" | "private">("public");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
@@ -69,6 +70,7 @@ export default function WritePage() {
         dynasty: dynasty.trim() || "佚名",
         isFavorite: false,
         favoriteCount: 0,
+        visibility,
       });
       setSaved(true);
       setTimeout(() => router.push("/yuan/sishi-moyuan"), 1500);
@@ -78,7 +80,7 @@ export default function WritePage() {
     } finally {
       setSaving(false);
     }
-  }, [title, author, dynasty, content, annotation, tags, selectedSeason, selectedSolarTerm, router]);
+  }, [title, author, dynasty, content, annotation, tags, selectedSeason, selectedSolarTerm, visibility, router]);
 
   return (
     <div className="paper-texture min-h-screen">
@@ -193,6 +195,24 @@ export default function WritePage() {
               className={cn("flex items-center gap-2 text-xs px-3 py-1.5 rounded-full border transition-all", isVertical ? "border-cinnabar/40 text-cinnabar bg-cinnabar/5" : "border-ink/10 text-ink-light hover:border-ink/20")}>
               {isVertical ? "竖排书写" : "横排书写"}
             </button>
+
+            {/* 可见性：默认公开，可切换私密 */}
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setVisibility("public")}
+                className={cn("text-xs px-3 py-1.5 rounded-full border transition-all", visibility === "public" ? "border-cinnabar/40 text-cinnabar bg-cinnabar/5" : "border-ink/10 text-ink-light hover:border-ink/20")}
+                title="公开：所有人可见"
+              >
+                公开
+              </button>
+              <button
+                onClick={() => setVisibility("private")}
+                className={cn("text-xs px-3 py-1.5 rounded-full border transition-all", visibility === "private" ? "border-cinnabar/40 text-cinnabar bg-cinnabar/5" : "border-ink/10 text-ink-light hover:border-ink/20")}
+                title="私密：仅自己可见"
+              >
+                私密
+              </button>
+            </div>
           </div>
 
           <AnimatePresence>

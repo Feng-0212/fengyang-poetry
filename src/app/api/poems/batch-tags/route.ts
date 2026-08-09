@@ -6,7 +6,7 @@
 // ============================================================
 import { NextRequest, NextResponse } from "next/server";
 import type { Poem } from "@/types/poem";
-import { checkPassword } from "@/lib/auth";
+import { requireUser } from "@/lib/user";
 import { TAG_POOL } from "@/lib/tags";
 
 const KV_KEY = "poems:all";
@@ -145,8 +145,10 @@ async function processWithConcurrency<T, R>(
 }
 
 export async function POST(req: NextRequest) {
-  const authErr = checkPassword(req);
-  if (authErr) return authErr;
+  // 登录校验
+  const auth = await requireUser(req);
+  if ("error" in auth) return auth.error;
+  const user = auth.user;
 
   try {
     const body = await req.json().catch(() => ({}));
@@ -155,9 +157,12 @@ export async function POST(req: NextRequest) {
       : undefined;
 
     const allPoems = await getPoems();
-    // 过滤出需要处理的诗（排除已删除）
+    // 过滤出需要处理的诗（仅本人 + 排除已删除 + 可见性目标）
     const toProcess = allPoems.filter(
-      (p) => !p.deletedAt && (targetIds ? targetIds.includes(p.id) : true)
+      (p) =>
+        !p.deletedAt &&
+        p.ownerId === user.id &&
+        (targetIds ? targetIds.includes(p.id) : true)
     );
 
     if (toProcess.length === 0) {

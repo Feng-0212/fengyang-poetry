@@ -7,6 +7,8 @@ import { createHash } from "crypto";
 type RedisLike = {
   get: <T>(key: string) => Promise<T | null>;
   set: (key: string, value: unknown, opts?: { ex?: number }) => Promise<unknown>;
+  /** 删除 key */
+  del: (key: string) => Promise<unknown>;
   /** 原子递增（不存在则视为 0 后 +1），返回操作后的值 */
   incr: (key: string) => Promise<number>;
   /** 设置 key 过期时间（秒） */
@@ -46,6 +48,10 @@ export async function getKv(): Promise<RedisLike | null> {
     async set(key: string, value: unknown, opts?: { ex?: number }): Promise<unknown> {
       mem.set(key, { v: value, exp: opts?.ex ? Date.now() + opts.ex * 1000 : 0 });
       return "OK";
+    },
+    async del(key: string): Promise<unknown> {
+      mem.delete(key);
+      return 1;
     },
     async incr(key: string): Promise<number> {
       const cur = counters.get(key) ?? 0;
