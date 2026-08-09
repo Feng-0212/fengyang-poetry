@@ -4,6 +4,7 @@
 // ============================================================
 import { NextResponse } from "next/server";
 import { createRateLimiter, retryAfterHeader } from "@/lib/ratelimit";
+import sharp from "sharp";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -11,24 +12,28 @@ export const maxDuration = 120;
 // 指数退避延迟
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-// dataURL 大小上限（base64 字符数）：超过则退回原始 URL，避免撑爆 Redis/IndexedDB
+// dataURL 大小上限（base64 字符数）：超过则压缩后再存，避免撑爆 Redis/IndexedDB
 const MAX_DATA_URL_LEN = 4 * 1024 * 1024; // 4MB base64（约 3MB 图片）
 
 /**
  * 下载图片并转成自包含 dataURL，避免第三方临时 URL 过期后裂图。
- * - 成功返回 data:...;base64,...
- * - 失败（网络错误/非 2xx/超过大小上限）抛错，由调用方决定是否退回原 URL
+ * - 一律用 sharp 压缩为 WebP（1024 上限、质量 85）：AI 原图常 1-5MB，
+ *   转 WebP 后约 100-300KB，远低于 Upstash 单 key 1MB 限制，存 Redis/IndexedDB 安全
+ * - 下载超时 45s（agnes CDN 实测约 20s）；压缩失败/仍超限 → 抛错由调用方退回原 URL
  */
 async function urlToDataUrl(url: string): Promise<string> {
-  const resp = await fetch(url, { signal: AbortSignal.timeout(15_000) });
+  const resp = await fetch(url, { signal: AbortSignal.timeout(45_000) });
   if (!resp.ok) throw new Error(`下载图片失败 (${resp.status})`);
-  const buf = await resp.arrayBuffer();
-  const b64 = Buffer.from(buf).toString("base64");
-  if (b64.length > MAX_DATA_URL_LEN) {
-    throw new Error("图片过大，跳过 dataURL 转换");
+  const buf = Buffer.from(await resp.arrayBuffer());
+  const compressed = await sharp(buf)
+    .resize(1024, 1024, { fit: "inside", withoutEnlargement: true })
+    .webp({ quality: 85 })
+    .toBuffer();
+  const c64 = compressed.toString("base64");
+  if (c64.length > MAX_DATA_URL_LEN) {
+    throw new Error("图片过大，压缩后仍超限");
   }
-  const mime = resp.headers.get("content-type") || "image/png";
-  return `data:${mime};base64,${b64}`;
+  return `data:image/webp;base64,${c64}`;
 }
 
 // 文本 Provider（生成绘画提示词用）

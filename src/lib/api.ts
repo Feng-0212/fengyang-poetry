@@ -146,7 +146,12 @@ export async function deletePoem(id: string): Promise<void> {
   invalidatePoemsCache();
 }
 
-/** 收藏切换 */
+/**
+ * 收藏切换。
+ * 语义澄清：单用户私人库场景下 isFavorite 为主键（0/1），favoriteCount 为
+ * 冗余的收藏次数（单用户下恒为 0/1），仅用于排序展示；若未来开放多用户，
+ * 需将收藏重构为独立的 poem_id→user_id 关系表，并废弃 favoriteCount。
+ */
 export async function toggleFavorite(id: string): Promise<void> {
   const poem = await getPoem(id);
   if (poem) {
