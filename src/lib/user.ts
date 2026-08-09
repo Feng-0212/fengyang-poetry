@@ -219,3 +219,49 @@ export function isAdminEmail(email: string): boolean {
     .filter(Boolean);
   return admins.includes(email.toLowerCase());
 }
+
+// ============================================================
+// 关注关系
+// follows:{userId} = 我关注的用户 ID 列表
+// followers:{userId} = 关注我的用户 ID 列表
+// ============================================================
+export async function getFollows(userId: string): Promise<string[]> {
+  const kv = await getKv();
+  if (!kv) return [];
+  try {
+    return (await kv.get<string[]>(`follows:${userId}`)) || [];
+  } catch {
+    return [];
+  }
+}
+
+export async function getFollowers(userId: string): Promise<string[]> {
+  const kv = await getKv();
+  if (!kv) return [];
+  try {
+    return (await kv.get<string[]>(`followers:${userId}`)) || [];
+  } catch {
+    return [];
+  }
+}
+
+/** 切换关注关系，返回最新状态与粉丝数 */
+export async function toggleFollow(
+  followerId: string,
+  targetId: string
+): Promise<{ following: boolean; followersCount: number }> {
+  const kv = await getKv();
+  if (!kv) return { following: false, followersCount: 0 };
+  const follows = await getFollows(followerId);
+  const followers = await getFollowers(targetId);
+  const already = follows.includes(targetId);
+  const nextFollows = already
+    ? follows.filter((id) => id !== targetId)
+    : [...follows, targetId];
+  const nextFollowers = already
+    ? followers.filter((id) => id !== followerId)
+    : [...followers, followerId];
+  await kv.set(`follows:${followerId}`, nextFollows);
+  await kv.set(`followers:${targetId}`, nextFollowers);
+  return { following: !already, followersCount: nextFollowers.length };
+}

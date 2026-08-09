@@ -1,7 +1,7 @@
 // ============================================================
 // 服务端 API 客户端 — 共享数据层
 // ============================================================
-import type { Poem, Collection, PublicUser } from "@/types/poem";
+import type { Poem, Collection, PublicUser, PoemComment } from "@/types/poem";
 import { getToken, clearSession } from "./auth";
 
 const BASE = "/api";
@@ -265,4 +265,54 @@ export async function apiMe(): Promise<PublicUser | null> {
   } catch {
     return null;
   }
+}
+
+/** 切换关注，返回最新状态与粉丝数 */
+export async function toggleFollow(
+  targetId: string
+): Promise<{ following: boolean; followersCount: number }> {
+  return apiFetch<{ following: boolean; followersCount: number }>(
+    `/user/${targetId}/follow`,
+    { method: "POST", requireAuth: true }
+  );
+}
+
+/** 查询关注状态（未登录也可用，返回粉丝数） */
+export async function getFollowStatus(
+  targetId: string
+): Promise<{ following: boolean; followersCount: number }> {
+  return apiFetch<{ following: boolean; followersCount: number }>(
+    `/user/${targetId}/follow`
+  );
+}
+
+// ============================================================
+// 评论
+// ============================================================
+/** 获取评论列表（公开） */
+export async function getComments(poemId: string): Promise<PoemComment[]> {
+  const res = await apiFetch<{ comments: PoemComment[] }>(
+    `/poem/${poemId}/comments`
+  );
+  return res.comments;
+}
+
+/** 发表评论（需登录） */
+export async function addComment(
+  poemId: string,
+  content: string
+): Promise<PoemComment> {
+  const res = await apiFetch<{ comment: PoemComment }>(
+    `/poem/${poemId}/comments`,
+    { method: "POST", requireAuth: true, body: JSON.stringify({ content }) }
+  );
+  return res.comment;
+}
+
+/** 删除评论（本人或诗作者） */
+export async function deleteComment(poemId: string, commentId: string): Promise<void> {
+  await apiFetch(`/poem/${poemId}/comments/${commentId}`, {
+    method: "DELETE",
+    requireAuth: true,
+  });
 }

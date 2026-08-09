@@ -153,15 +153,20 @@ function SolarTermPoemGrid({
 }: { season?: string; solarTerm?: string; collectionId?: string }) {
   // 统一走云端 API（useAllPoems：云端优先，IndexedDB 降级），与其他页面数据源一致
   const { poems: allPoems, loading } = useAllPoems();
+  const [sortMode, setSortMode] = useState<"latest" | "hot">("latest");
   const poems = useMemo(() => {
-    return allPoems.filter(
+    const filtered = allPoems.filter(
       (p) =>
         !p.deletedAt &&
         (!collectionId || p.collectionId === collectionId) &&
         (!solarTerm || p.solarTerm === solarTerm) &&
         (!season || p.season === season)
     );
-  }, [allPoems, season, solarTerm, collectionId]);
+    if (sortMode === "hot") {
+      return [...filtered].sort((a, b) => (b.favoriteCount || 0) - (a.favoriteCount || 0));
+    }
+    return [...filtered].sort((a, b) => b.createdAt - a.createdAt);
+  }, [allPoems, season, solarTerm, collectionId, sortMode]);
 
   if (loading) return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -172,8 +177,31 @@ function SolarTermPoemGrid({
   if (poems.length === 0) return null;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {poems.map((poem, i) => <PoemCard key={poem.id} poem={poem} index={i} />)}
+    <div>
+      {/* 同题排行榜排序 */}
+      <div className="flex items-center justify-center gap-2 mb-6">
+        <span className="text-xs text-ink-light/60">排序：</span>
+        <button
+          onClick={() => setSortMode("latest")}
+          className={cn("px-3 py-1 rounded-full text-xs transition-all border",
+            sortMode === "latest" ? "text-white border-transparent" : "text-ink-light border-ink/10 hover:border-ink/20")}
+          style={sortMode === "latest" ? { backgroundColor: "#C14A3F" } : undefined}
+        >
+          最新
+        </button>
+        <button
+          onClick={() => setSortMode("hot")}
+          className={cn("px-3 py-1 rounded-full text-xs transition-all border",
+            sortMode === "hot" ? "text-white border-transparent" : "text-ink-light border-ink/10 hover:border-ink/20")}
+          style={sortMode === "hot" ? { backgroundColor: "#C14A3F" } : undefined}
+        >
+          ♥ 最受欢迎
+        </button>
+        <span className="text-xs text-ink-light/60">{poems.length} 首</span>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {poems.map((poem, i) => <PoemCard key={poem.id} poem={poem} index={i} />)}
+      </div>
     </div>
   );
 }

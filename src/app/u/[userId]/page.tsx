@@ -7,8 +7,9 @@ import { notFound } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import PoemCard from "@/components/poem/PoemCard";
+import FollowButton from "@/components/user/FollowButton";
 import { getKv } from "@/lib/kv";
-import { getUserById } from "@/lib/user";
+import { getUserById, getFollows, getFollowers } from "@/lib/user";
 import type { Poem, Collection } from "@/types/poem";
 
 export const runtime = "nodejs";
@@ -20,9 +21,11 @@ async function getProfile(userId: string) {
     if (!user) return null;
     const kv = await getKv();
     if (!kv) return null;
-    const [poems, collections] = await Promise.all([
+    const [poems, collections, follows, followers] = await Promise.all([
       kv.get<Poem[]>("poems:all").catch(() => []),
       kv.get<Collection[]>("collections:all").catch(() => []),
+      getFollows(userId),
+      getFollowers(userId),
     ]);
     const colMap = new Map((collections || []).map((c) => [c.id, c]));
     const publicPoems = (poems || [])
@@ -33,7 +36,13 @@ async function getProfile(userId: string) {
           (p.visibility !== "private" || p.visibility === undefined)
       )
       .sort((a, b) => b.createdAt - a.createdAt);
-    return { user: { id: user.id, name: user.name }, poems: publicPoems, colMap };
+    return {
+      user: { id: user.id, name: user.name },
+      poems: publicPoems,
+      colMap,
+      followingCount: follows.length,
+      followersCount: followers.length,
+    };
   } catch {
     return null;
   }
@@ -62,7 +71,7 @@ export default async function UserPage({
   const data = await getProfile(userId);
   if (!data) notFound();
 
-  const { user, poems, colMap } = data;
+  const { user, poems, colMap, followingCount, followersCount } = data;
 
   return (
     <div className="paper-texture min-h-screen flex flex-col">
@@ -79,9 +88,15 @@ export default async function UserPage({
           <h1 className="font-[var(--font-mashan)] text-3xl text-ink-dark mb-2">
             {user.name} 的墨苑
           </h1>
-          <p className="text-ink-light text-sm">
-            公开诗词 {poems.length} 首 · 以诗会友
+          <p className="text-ink-light text-sm mb-4">
+            公开诗词 {poems.length} 首 · 关注 {followingCount} · 粉丝 {followersCount}
           </p>
+          <div className="flex justify-center">
+            <FollowButton
+              targetUserId={user.id}
+              initialFollowersCount={followersCount}
+            />
+          </div>
         </div>
 
         {poems.length === 0 ? (

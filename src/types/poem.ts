@@ -114,6 +114,18 @@ export interface PublicUser {
   name: string;
 }
 
+// ============================================================
+// 评论（社区化）
+// ============================================================
+export interface PoemComment {
+  id: string;
+  poemId: string;
+  userId: string;
+  userName: string;
+  content: string;
+  createdAt: number;
+}
+
 // 预置藏 ID 常量
 export const COLLECTION_IDS = {
   SISHI_MOYUAN: "sishi-moyuan",

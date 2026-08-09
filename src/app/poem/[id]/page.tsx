@@ -16,6 +16,7 @@ import TtsButton from "@/components/poem/TtsButton";
 import dynamic from "next/dynamic";
 const ShareCard = dynamic(() => import("@/components/share/ShareCard"), { ssr: false });
 const AiPanel = dynamic(() => import("@/components/ai/AiPanel"), { ssr: false });
+import CommentSection from "@/components/comment/CommentSection";
 import { usePoem } from "@/hooks/usePoem";
 import { useSolarTerm } from "@/hooks/useSolarTerm";
 import { getCollectionById } from "@/lib/db";
@@ -493,6 +494,9 @@ export default function PoemDetailPage({ params }: Props) {
               onUpdated={refreshPoem}
             />
           </motion.div>
+
+          {/* 评论区 */}
+          <CommentSection poemId={poem.id} poemOwnerId={poem.ownerId} />
         </div>
       </main>
 
