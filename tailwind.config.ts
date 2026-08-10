@@ -9,15 +9,15 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // 基础色板
-        rice: "#F5F0E8",          // 古宣纸色
+        // 基础色板（CSS 变量驱动，暗色模式自动适配）
+        rice: "rgb(var(--color-rice) / <alpha-value>)",          // 古宣纸色
         ink: {
-          dark: "#1A1A1A",         // 焦墨
-          DEFAULT: "#4A4A4A",      // 浓墨
-          light: "#8A8A8A",        // 淡墨
+          dark: "rgb(var(--color-ink-dark) / <alpha-value>)",    // 焦墨
+          DEFAULT: "rgb(var(--color-ink) / <alpha-value>)",      // 浓墨
+          light: "rgb(var(--color-ink-light) / <alpha-value>)",  // 淡墨
         },
-        cinnabar: "#C14A3F",       // 朱砂色
-        gold: "#B8860B",           // 古金色
+        cinnabar: "rgb(var(--color-cinnabar) / <alpha-value>)",  // 朱砂色
+        gold: "rgb(var(--color-gold) / <alpha-value>)",          // 古金色
         // 春季节气
         spring: {
           lichun: "#8B9A6B",

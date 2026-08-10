@@ -38,7 +38,7 @@ function CollectionCard({
         <article
           className="relative overflow-hidden rounded-2xl p-6 transition-all duration-300 group cursor-pointer"
           style={{
-            background: `linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%)`,
+            background: "var(--card-gradient)",
             border: `1px solid ${collection.color}25`,
             boxShadow: `0 4px 24px ${collection.color}08`,
           }}
@@ -207,7 +207,7 @@ export default function CollectionGrid({
               key={i}
               className="rounded-2xl p-6 animate-pulse"
               style={{
-                background: "rgba(255,255,255,0.7)",
+                background: "var(--card-bg)",
                 height: 220,
               }}
             />

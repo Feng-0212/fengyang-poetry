@@ -130,3 +130,17 @@ export async function memExpire(key: string, seconds: number): Promise<void> {
 export function hashKey(...parts: string[]): string {
   return createHash("sha256").update(parts.join("\u0001")).digest("hex").slice(0, 24);
 }
+
+/**
+ * 是否配置了持久化存储（Upstash Redis）。
+ * 未配置时 getKv() 回退到进程内存：本地单进程开发可接受，
+ * 但线上无状态部署（如 Vercel Serverless）每次请求可能是新进程，
+ * 会话与数据都会「刷新即丢」。设置页据此显示警告。
+ */
+export function hasPersistentStorage(): boolean {
+  return !!(
+    process.env.UPSTASH_REDIS_REST_URL ||
+    process.env.KV_REST_API_URL ||
+    process.env.REDIS_URL
+  );
+}

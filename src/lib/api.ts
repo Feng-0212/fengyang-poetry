@@ -257,13 +257,21 @@ export async function apiLogout(): Promise<void> {
   }
 }
 
-/** 当前登录用户（未登录返回 null） */
-export async function apiMe(): Promise<PublicUser | null> {
+/**
+ * 当前登录用户（会话恢复用）。
+ * 返回 { user, ok }：
+ * - ok=true：服务器明确给出结果（user 可能为 null = 确未登录/会话失效）
+ * - ok=false：网络错误/5xx 等瞬时故障，会话状态未知 —— 调用方应保留本地缓存与 token，
+ *   避免「刷新时恰好一个请求失败就强制登出」
+ */
+export async function apiMe(): Promise<{ user: PublicUser | null; ok: boolean }> {
   try {
     const res = await apiFetch<{ user: PublicUser }>("/auth/me");
-    return res.user;
-  } catch {
-    return null;
+    return { user: res.user, ok: true };
+  } catch (e) {
+    // apiFetch 已在 401 时清空本地会话；这里把 401 当作「确未登录」，其余视为瞬时错误
+    const status = (e as { status?: number })?.status;
+    return { user: null, ok: status === 401 };
   }
 }
 

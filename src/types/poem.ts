@@ -54,7 +54,8 @@ export interface Poem {
   content: string;
   annotation?: string;
   aiCommentary?: string; // AI 赏析别名（与用户随笔分离）
-  coverImage?: string; // AI 配图 URL 或 dataURL
+  coverImage?: string; // AI 配图 URL 或 dataURL（当前封面）
+  images?: string[]; // AI 配图集子（历史全部配图，含封面；最多保留 6 张）
   tags?: string[]; // 用户自定义标签（如：思乡、山水、豪放）
   aiAnnotation?: string; // AI 赏析（长文本，由 AI 生成）
   aiImageUrl?: string; // AI 配图 URL

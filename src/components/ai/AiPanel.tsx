@@ -118,7 +118,12 @@ export default function AiPanel({
     await requirePassword(async () => {
       setSaving(true);
       try {
-        await updatePoem(poem.id, { coverImage: draftImg });
+        // 追加到配图集子（保留历史），并设为当前封面；上限 6 张防撑爆存储
+        const existing = Array.isArray(poem.images) ? poem.images : [];
+        const images = existing.includes(draftImg)
+          ? existing
+          : [...existing, draftImg].slice(-6);
+        await updatePoem(poem.id, { coverImage: draftImg, images });
         setDraftImg(null);
         onUpdated();
       } finally {

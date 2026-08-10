@@ -24,7 +24,7 @@ import { useEffect, useState } from "react";
 import type { Collection } from "@/types/poem";
 import { getSolarTermMeta, getSeasonName } from "@/lib/solarterms";
 import { formatDate } from "@/lib/utils";
-import { deletePoem, toggleFavorite } from "@/lib/api";
+import { deletePoem, toggleFavorite, updatePoem } from "@/lib/api";
 import { usePasswordGate } from "@/components/auth/PasswordGate";
 import { m as motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -128,6 +128,31 @@ export default function PoemDetailPage({ params }: Props) {
     // 未登录 → 跳登录；已登录切换收藏后重新拉取（服务端返回最新 favoritedBy/count）
     await requirePassword(async () => {
       await toggleFavorite(poem.id);
+      await refreshPoem();
+    });
+  };
+
+  // 配图集子：全部历史配图（images 与封面合并去重）
+  const allImages = Array.from(
+    new Set([...(poem.images || []), ...(poem.coverImage ? [poem.coverImage] : [])])
+  );
+
+  const handleSetCover = async (img: string) => {
+    if (img === poem.coverImage) return;
+    await requirePassword(async () => {
+      await updatePoem(poem.id, { coverImage: img });
+      await refreshPoem();
+    });
+  };
+
+  const handleRemoveImage = async (img: string) => {
+    if (!confirm("从配图集子中移除这张图？")) return;
+    await requirePassword(async () => {
+      const images = (poem.images || []).filter((x) => x !== img);
+      let coverImage = poem.coverImage;
+      // 移除的是封面时，回退到最后一张
+      if (coverImage === img) coverImage = images[images.length - 1] || undefined;
+      await updatePoem(poem.id, { coverImage, images });
       await refreshPoem();
     });
   };
@@ -239,7 +264,7 @@ export default function PoemDetailPage({ params }: Props) {
             <article
               className="relative"
               style={{
-                background: "rgba(255,255,255,0.75)",
+                background: "var(--card-bg)",
                 backdropFilter: "blur(12px)",
                 border: `1px solid ${sealColor}20`,
                 borderRadius: 8,
@@ -276,8 +301,8 @@ export default function PoemDetailPage({ params }: Props) {
                   </div>
                 </div>
 
-                {/* AI 配图（封面） */}
-                {poem.coverImage && (
+                {/* AI 配图：单图大图展示；多图则展示配图集子 */}
+                {allImages.length === 1 && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.98 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -286,12 +311,80 @@ export default function PoemDetailPage({ params }: Props) {
                     style={{ border: `1px solid ${sealColor}20` }}
                   >
                     <Image
-                      src={poem.coverImage}
+                      src={allImages[0]}
                       alt={poem.title}
                       fill
                       sizes="(max-width: 768px) 100vw, 640px"
                       className="object-cover"
                     />
+                  </motion.div>
+                )}
+
+                {allImages.length > 1 && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.8, duration: 0.6 }}
+                    className="mb-8"
+                  >
+                    <div className="flex items-center gap-1.5 mb-3">
+                      <span className="text-xs text-ink-light/60 uppercase tracking-wider">
+                        配图集子
+                      </span>
+                      <span className="text-xs text-ink-light/40">
+                        （{allImages.length} 张）
+                      </span>
+                      <span className="ml-auto text-[10px] text-ink-light/50">
+                        点击缩略图设为封面
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {allImages.map((img) => {
+                        const isCover = img === poem.coverImage;
+                        return (
+                          <div
+                            key={img}
+                            className="relative group rounded-lg overflow-hidden aspect-square"
+                            style={{
+                              border: isCover
+                                ? `2px solid ${sealColor}`
+                                : `1px solid ${sealColor}20`,
+                            }}
+                          >
+                            <button
+                              onClick={() => handleSetCover(img)}
+                              className="block w-full h-full min-h-0 min-w-0"
+                              title={isCover ? "当前封面" : "设为封面"}
+                              aria-label="设为封面"
+                            >
+                              <Image
+                                src={img}
+                                alt={poem.title}
+                                fill
+                                sizes="(max-width: 768px) 45vw, 200px"
+                                className="object-cover"
+                              />
+                            </button>
+                            {isCover && (
+                              <span
+                                className="absolute top-1.5 left-1.5 text-[10px] px-1.5 py-0.5 rounded-full text-white pointer-events-none"
+                                style={{ backgroundColor: sealColor }}
+                              >
+                                封面
+                              </span>
+                            )}
+                            <button
+                              onClick={() => handleRemoveImage(img)}
+                              className="absolute top-1.5 right-1.5 w-6 h-6 min-h-0 min-w-0 rounded-full bg-black/50 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                              title="从集子中移除"
+                              aria-label="移除配图"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </motion.div>
                 )}
 

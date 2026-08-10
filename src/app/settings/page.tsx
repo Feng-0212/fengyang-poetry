@@ -51,6 +51,15 @@ export default function SettingsPage() {
     message: string;
   } | null>(null);
 
+  // 存储模式探测：未配置 Redis 时提示「刷新/重启丢数据」
+  const [storageMode, setStorageMode] = useState<"redis" | "memory" | "">("");
+  useEffect(() => {
+    fetch("/api/health")
+      .then((r) => r.json())
+      .then((d) => setStorageMode(d.storage || ""))
+      .catch(() => {});
+  }, []);
+
   // AI 配置
   const [aiConfig, setAiConfig] = useState<AiConfig>({
     apiKey: "",
@@ -317,6 +326,27 @@ export default function SettingsPage() {
             数据有归，墨迹长存
           </p>
         </div>
+
+        {/* 存储模式警告：未配置 Redis（进程内存回退）时提示 */}
+        {storageMode === "memory" && (
+          <div className="mb-8 p-4 rounded-xl border border-amber-500/40 bg-amber-500/10 text-sm leading-relaxed">
+            <div className="font-medium text-amber-600 mb-1">
+              ⚠️ 当前未配置持久化存储（Redis）
+            </div>
+            <p className="text-ink">
+              网站正运行在「进程内存」模式：刷新页面或服务重启后，登录状态与新增/修改的诗词可能丢失。
+              请在部署环境变量中配置{" "}
+              <code className="px-1 py-0.5 rounded bg-ink/8 font-mono text-xs">
+                UPSTASH_REDIS_REST_URL
+              </code>{" "}
+              与{" "}
+              <code className="px-1 py-0.5 rounded bg-ink/8 font-mono text-xs">
+                UPSTASH_REDIS_REST_TOKEN
+              </code>
+              （本地开发可忽略）。
+            </p>
+          </div>
+        )}
 
         {/* 外观设置 */}
         <AppearanceSettings />

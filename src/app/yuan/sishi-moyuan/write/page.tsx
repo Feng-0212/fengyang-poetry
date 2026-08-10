@@ -169,9 +169,9 @@ function WriteForm() {
           <div
             className="relative rounded-xl p-8 md:p-12"
             style={{
-              background: "rgba(255,255,255,0.7)",
+              background: "var(--card-bg)",
               backdropFilter: "blur(8px)",
-              border: "1px solid rgba(26,26,26,0.08)",
+              border: "1px solid var(--border)",
               boxShadow: "0 8px 40px rgba(26,26,26,0.08)",
             }}
           >

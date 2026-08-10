@@ -128,9 +128,9 @@ export default function SearchModal({ open, onClose }: Props) {
             <div
               className="rounded-2xl overflow-hidden"
               style={{
-                background: "rgba(255,255,255,0.95)",
+                background: "var(--card-bg-solid)",
                 backdropFilter: "blur(20px)",
-                border: "1px solid rgba(26,26,26,0.08)",
+                border: "1px solid var(--border)",
                 boxShadow: "0 20px 60px rgba(26,26,26,0.2)",
               }}
             >

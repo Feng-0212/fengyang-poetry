@@ -52,10 +52,14 @@ export function PasswordProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const cached = getStoredUser();
     if (cached) setUserState(cached);
-    apiMe().then((u) => {
-      setUserState(u);
-      if (u) setStoredUser(u);
-      else clearSession();
+    apiMe().then((res) => {
+      if (res.ok) {
+        // 服务器明确返回：登录则缓存，未登录则清理本地会话
+        setUserState(res.user);
+        if (res.user) setStoredUser(res.user);
+        else clearSession();
+      }
+      // ok=false（网络/5xx 瞬时错误）：会话状态未知，保留本地缓存的用户与 token，避免误登出
       setLoading(false);
     });
   }, []);
