@@ -62,6 +62,8 @@ export default function AiPanel({
         await updatePoem(poem.id, { aiCommentary: draftC });
         setDraftC(null);
         onUpdated();
+      } catch (e) {
+        alert(e instanceof Error ? e.message : "保存失败，请重试");
       } finally {
         setSaving(false);
       }
@@ -107,6 +109,8 @@ export default function AiPanel({
         setSuggestedTags([]);
         setSelectedTags([]);
         onUpdated();
+      } catch (e) {
+        alert(e instanceof Error ? e.message : "保存失败，请重试");
       } finally {
         setSaving(false);
       }
@@ -126,6 +130,8 @@ export default function AiPanel({
         await updatePoem(poem.id, { coverImage: draftImg, images });
         setDraftImg(null);
         onUpdated();
+      } catch (e) {
+        alert(e instanceof Error ? e.message : "保存失败，请重试");
       } finally {
         setSaving(false);
       }

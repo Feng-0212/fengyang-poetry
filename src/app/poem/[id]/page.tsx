@@ -118,8 +118,12 @@ export default function PoemDetailPage({ params }: Props) {
   const handleDelete = async () => {
     await requirePassword(async () => {
       if (confirm("确定要删除这首诗词吗？")) {
-        await deletePoem(poem.id);
-        router.push(backHref);
+        try {
+          await deletePoem(poem.id);
+          router.push(backHref);
+        } catch (e) {
+          alert(e instanceof Error ? e.message : "删除失败，请重试");
+        }
       }
     });
   };
@@ -140,20 +144,28 @@ export default function PoemDetailPage({ params }: Props) {
   const handleSetCover = async (img: string) => {
     if (img === poem.coverImage) return;
     await requirePassword(async () => {
-      await updatePoem(poem.id, { coverImage: img });
-      await refreshPoem();
+      try {
+        await updatePoem(poem.id, { coverImage: img });
+        await refreshPoem();
+      } catch (e) {
+        alert(e instanceof Error ? e.message : "设置封面失败，请重试");
+      }
     });
   };
 
   const handleRemoveImage = async (img: string) => {
     if (!confirm("从配图集子中移除这张图？")) return;
     await requirePassword(async () => {
-      const images = (poem.images || []).filter((x) => x !== img);
-      let coverImage = poem.coverImage;
-      // 移除的是封面时，回退到最后一张
-      if (coverImage === img) coverImage = images[images.length - 1] || undefined;
-      await updatePoem(poem.id, { coverImage, images });
-      await refreshPoem();
+      try {
+        const images = (poem.images || []).filter((x) => x !== img);
+        let coverImage = poem.coverImage;
+        // 移除的是封面时，回退到最后一张
+        if (coverImage === img) coverImage = images[images.length - 1] || undefined;
+        await updatePoem(poem.id, { coverImage, images });
+        await refreshPoem();
+      } catch (e) {
+        alert(e instanceof Error ? e.message : "移除失败，请重试");
+      }
     });
   };
 

@@ -38,6 +38,14 @@ export async function getKv(): Promise<RedisLike | null> {
     /* ignore */
   }
   // 无 Redis 时返回完整内存回退（含 incr / expire，供限流等场景使用）
+  // 注意：生产环境（无状态平台如 Vercel/Cloudflare）每次请求可能是新进程，
+  // 内存回退意味着会话/数据「刷新即丢」——必须配置 Redis 环境变量。
+  if (process.env.NODE_ENV === "production") {
+    console.error(
+      "[KV] ⚠️ 未配置 Redis（UPSTASH_REDIS_REST_URL/TOKEN），正在使用进程内存回退。" +
+        "生产环境会话与数据不会持久化，请在部署平台配置 Redis 环境变量。"
+    );
+  }
   const fallback: RedisLike = {
     async get<T>(key: string): Promise<T | null> {
       const hit = mem.get(key);
