@@ -91,16 +91,18 @@ export async function createSession(userId: string): Promise<string> {
   return token;
 }
 
+/**
+ * 查会话：返回对应用户；无会话返回 null。
+ * 注意：存储故障（限流 429 / 网络抖动）会直接抛出，由调用方区分
+ * 「会话失效(401)」与「存储不可用(5xx)」——避免存储一抖就把有效会话
+ * 当成已过期，导致用户被莫名登出（客户端会因此清空本地 token）。
+ */
 export async function getSessionUser(token: string): Promise<User | null> {
   const kv = await getKv();
-  if (!kv) return null;
-  try {
-    const userId = await kv.get<string>(`sessions:${token}`);
-    if (!userId) return null;
-    return await getUserById(userId);
-  } catch {
-    return null;
-  }
+  if (!kv) throw new Error("KV unavailable");
+  const userId = await kv.get<string>(`sessions:${token}`);
+  if (!userId) return null;
+  return await getUserById(userId);
 }
 
 export async function deleteSession(token: string): Promise<void> {
@@ -125,24 +127,40 @@ export async function requireUser(
       ),
     };
   }
-  const user = await getSessionUser(token);
-  if (!user) {
+  try {
+    const user = await getSessionUser(token);
+    if (!user) {
+      return {
+        error: NextResponse.json(
+          { error: "unauthorized", message: "登录已过期，请重新登录" },
+          { status: 401 }
+        ),
+      };
+    }
+    return { user };
+  } catch (e) {
+    // 存储不可用（限流/网络抖动）：返回 503 而非 401，
+    // 避免客户端把有效会话误判为已过期而清空本地登录态
+    console.error("[auth] 会话校验时存储不可用:", e);
     return {
       error: NextResponse.json(
-        { error: "unauthorized", message: "登录已过期，请重新登录" },
-        { status: 401 }
+        { error: "storage-unavailable", message: "存储服务暂时不可用，请稍后重试" },
+        { status: 503 }
       ),
     };
   }
-  return { user };
 }
 
-/** 尽力解析当前用户（读接口用：未登录返回 null，不报错） */
+/** 尽力解析当前用户（读接口用：未登录/存储抖动均返回 null，不报错） */
 export async function optionalUser(req: NextRequest): Promise<User | null> {
   const auth = req.headers.get("authorization") || "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
   if (!token) return null;
-  return getSessionUser(token);
+  try {
+    return await getSessionUser(token);
+  } catch {
+    return null; // 读接口降级：按未登录处理（公开内容仍可读）
+  }
 }
 
 // ============================================================

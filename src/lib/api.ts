@@ -29,7 +29,11 @@ async function apiFetch<T>(
       (err as any).status = 401;
       throw err;
     }
-    throw new Error(`API ${res.status}: ${res.statusText}`);
+    // 其他错误（5xx/429 等）：尽量透出服务端 message（如「存储服务暂时不可用」）
+    const body = await res.json().catch(() => ({}));
+    const err = new Error(body.message || `API ${res.status}: ${res.statusText}`);
+    (err as any).status = res.status;
+    throw err;
   }
   return res.json();
 }

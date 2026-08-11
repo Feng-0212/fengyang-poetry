@@ -3,9 +3,9 @@
 // 策略：静态资源 cache-first，API 网络优先
 // ============================================================
 
-const CACHE_NAME = "moyuan-v1";
-const STATIC_CACHE = "moyuan-static-v1";
-const API_CACHE = "moyuan-api-v1";
+const CACHE_NAME = "moyuan-v2";
+const STATIC_CACHE = "moyuan-static-v2";
+const API_CACHE = "moyuan-api-v2";
 
 // 安装时缓存静态资源
 self.addEventListener("install", (event) => {
@@ -23,13 +23,13 @@ self.addEventListener("install", (event) => {
   self.skipWaiting();
 });
 
-// 激活时清理旧缓存
+// 激活时清理旧缓存（任意旧版本 moyuan-* 全部清除，确保新版本上线后不留旧壳/旧资源）
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
-          .filter((name) => name !== STATIC_CACHE && name !== API_CACHE)
+          .filter((name) => name.startsWith("moyuan-") && name !== STATIC_CACHE && name !== API_CACHE)
           .map((name) => caches.delete(name))
       );
     })
