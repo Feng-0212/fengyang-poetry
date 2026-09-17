@@ -30,9 +30,10 @@ const REASON_TEXT: Record<VerifyReason, string> = {
   too_long: "一次吟一句就好（不超过四十字）",
   char_missing: "此句不含令字，飞花令须句句含令字",
   duplicate: "此句方才已有人吟过，须另觅新句",
-  not_found: "诗库中查无此句——须为真实诗句（个别名句或因版本用字差异而未收录）",
+  not_found: "诗库查无、AI 考证亦未通过——恐非真实诗句，换一句试试",
+  rate_limited: "验证太频繁了，稍候片刻再吟",
   upstream_error: "诗库服务出错，请稍后再试",
-  upstream_unreachable: "诗库暂时无法连接，请稍后再试",
+  upstream_unreachable: "诗库与 AI 考证都暂时不可用，请稍后再试",
 };
 
 /** 高亮句中令字 */
@@ -61,7 +62,7 @@ export default function FeihuaLingPage() {
   const [turn, setTurn] = useState<0 | 1>(0);
   const [input, setInput] = useState("");
   const [checking, setChecking] = useState(false);
-  const [error, setError] = useState<{ reason: VerifyReason; at: number } | null>(null);
+  const [error, setError] = useState<{ reason: VerifyReason; at: number; extra?: string | null } | null>(null);
 
   const playerName = (i: 0 | 1) => (players === 1 ? "你" : i === 0 ? "甲" : "乙");
 
@@ -85,8 +86,8 @@ export default function FeihuaLingPage() {
     []
   );
 
-  const showError = useCallback((reason: VerifyReason) => {
-    setError({ reason, at: Date.now() });
+  const showError = useCallback((reason: VerifyReason, extra?: string | null) => {
+    setError({ reason, at: Date.now(), extra });
   }, []);
 
   const submit = useCallback(async () => {
@@ -112,7 +113,7 @@ export default function FeihuaLingPage() {
       const data = await res.json();
       if (!data.ok || !data.matched) {
         const reason: VerifyReason = data.reason || "not_found";
-        showError(reason === "char_missing" ? "char_missing" : reason);
+        showError(reason === "char_missing" ? "char_missing" : reason, data.ai_note || null);
         return;
       }
       const hit: FlowerHit = data.hits[0];
@@ -227,16 +228,8 @@ export default function FeihuaLingPage() {
                   开令
                 </button>
                 <p className="text-xs text-ink-light/60 mt-4 leading-relaxed">
-                  吟句须为真实诗句，由
-                  <a
-                    href="https://shicang.poeagent.top"
-                    target="_blank"
-                    rel="noopener"
-                    className="text-cinnabar/80 hover:text-cinnabar mx-0.5"
-                  >
-                    诗藏
-                  </a>
-                  词库验证出处；整局不得重复，接不上者为负。
+                  吟句须为真实诗句：诗藏词库即时验证出处，词库未收录时由 AI
+                  考证真伪；整局不得重复，接不上者为负。
                 </p>
               </div>
             </motion.div>
@@ -316,7 +309,9 @@ export default function FeihuaLingPage() {
   }
 
   /* ---------- 对局中 ---------- */
-  const cur = error ? REASON_TEXT[error.reason] : null;
+  const cur = error
+    ? REASON_TEXT[error.reason] + (error.extra ? `（${error.extra}）` : "")
+    : null;
   return (
     <div className="paper-texture min-h-screen">
       <Navbar />
@@ -400,16 +395,24 @@ export default function FeihuaLingPage() {
                     <CharText text={node.text} char={flowerChar} className="text-lg text-ink-dark" />
                     {node.hit && (
                       <div className="text-xs text-ink-light/60 mt-0.5 truncate">
-                        <a
-                          href={node.hit.url}
-                          target="_blank"
-                          rel="noopener"
-                          className="hover:text-cinnabar transition-colors"
-                          title="在诗藏中查看原文"
-                        >
-                          《{node.hit.title}》 · {node.hit.poet}
-                          {node.hit.dynasty ? `（${node.hit.dynasty}）` : ""} ↗
-                        </a>
+                        {node.hit.url ? (
+                          <a
+                            href={node.hit.url}
+                            target="_blank"
+                            rel="noopener"
+                            className="hover:text-cinnabar transition-colors"
+                            title="在诗藏中查看原文"
+                          >
+                            《{node.hit.title}》 · {node.hit.poet}
+                            {node.hit.dynasty ? `（${node.hit.dynasty}）` : ""} ↗
+                          </a>
+                        ) : (
+                          <span title={node.hit.note || "由 AI 考证真实性"}>
+                            <span className="text-cinnabar/80 mr-1">〔AI 考证〕</span>
+                            《{node.hit.title}》 · {node.hit.poet}
+                            {node.hit.dynasty ? `（${node.hit.dynasty}）` : ""}
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>

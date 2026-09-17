@@ -6,15 +6,17 @@
 // ============================================================
 
 export interface FlowerHit {
-  id: number;
+  id: number | null;
   title: string;
   poet: string;
   dynasty: string | null;
   line: string;
-  url: string;
+  url: string | null; // 词库命中时为诗藏页面链接；AI 考证时为 null
+  via?: "ai"; // ai = DeepSeek 兜底考证
+  note?: string | null;
 }
 
-/** 诗藏返回的校验失败原因（char_missing / not_found 等） */
+/** 验证失败原因（前端文案用） */
 export type VerifyReason =
   | "empty"
   | "too_short"
@@ -22,6 +24,7 @@ export type VerifyReason =
   | "char_missing"
   | "duplicate"
   | "not_found"
+  | "rate_limited"
   | "upstream_error"
   | "upstream_unreachable";
 
