@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 
 const NAV_LINKS: { href: string; label: string; prefetch?: boolean }[] = [
   { href: "/yuan/sishi-moyuan", label: "四时墨苑" },
-  { href: "/chain", label: "接龙", prefetch: false }, // 低频页，不预取
+  { href: "/chain", label: "飞花令", prefetch: false }, // 低频页，不预取
   { href: "/search", label: "搜索" },
   { href: "/settings", label: "设置" },
 ];
