@@ -6,6 +6,7 @@
 // ============================================================
 import { NextResponse } from "next/server";
 import { createRateLimiter, retryAfterHeader } from "@/lib/ratelimit";
+import { fetchChat, hasAnyKey, NO_KEY_MESSAGE } from "@/lib/ai-providers";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -31,26 +32,6 @@ function extractText(data: unknown): string {
     .trim();
 }
 
-function resolveConfig(req: Request) {
-  const h = req.headers;
-  const key =
-    h.get("x-ai-key") ||
-    process.env.AI_API_KEY ||
-    process.env.OPENAI_API_KEY ||
-    "";
-  let baseUrl =
-    h.get("x-ai-base-url") ||
-    process.env.AI_BASE_URL ||
-    process.env.OPENAI_BASE_URL ||
-    "https://api.openai.com/v1";
-  baseUrl = baseUrl.replace(/\/+$/, "");
-  const model =
-    h.get("x-ai-model") ||
-    process.env.AI_TEXT_MODEL ||
-    "gpt-4o-mini";
-  return { key, baseUrl, model };
-}
-
 const writeLimiter = createRateLimiter({ limit: 8, windowMs: 60_000 });
 
 export async function POST(req: Request) {
@@ -61,10 +42,9 @@ export async function POST(req: Request) {
       headers: { "Retry-After": retryAfterHeader(rl.reset), "X-RateLimit-Limit": String(rl.total), "X-RateLimit-Remaining": String(rl.remaining) },
     });
   }
-  const { key, baseUrl, model } = resolveConfig(req);
-  if (!key) {
+  if (!hasAnyKey(req)) {
     return NextResponse.json(
-      { error: "未配置 API Key。请在「设置 · AI」中填入你自己的 Key，或联系站长配置。" },
+      { error: NO_KEY_MESSAGE },
       { status: 400 }
     );
   }
@@ -110,24 +90,14 @@ export async function POST(req: Request) {
   }
 
   const callModel = async () => {
-    const resp = await fetch(`${baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${key}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: prompt },
-        ],
-        temperature: 0.85,
-        max_tokens: 800,
-        chat_template_kwargs: { enable_thinking: false },
-      }),
+    return fetchChat(req, {
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: prompt },
+      ],
+      temperature: 0.85,
+      max_tokens: 800,
     });
-    return resp;
   };
 
   try {

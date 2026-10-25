@@ -14,6 +14,7 @@ import { useCollection } from "@/hooks/useCollection";
 import { SOLAR_TERMS_META } from "@/lib/solarterms";
 import { addPoem } from "@/lib/api";
 import TagInput from "@/components/poem/TagInput";
+import ImagePoemPanel from "@/components/poem/ImagePoemPanel";
 import { cn } from "@/lib/utils";
 import type { SeasonKey } from "@/types/poem";
 import { m as motion, AnimatePresence } from "framer-motion";
@@ -267,7 +268,7 @@ export default function CollectionWritePage({ params }: Props) {
             </>)}
           </div>
 
-          <div className="mt-4 flex items-center gap-4">
+          <div className="mt-4 flex items-center gap-4 flex-wrap">
             <button
               onClick={() => setIsVertical(!isVertical)}
               className={cn(
@@ -279,6 +280,14 @@ export default function CollectionWritePage({ params }: Props) {
             >
               {isVertical ? "竖排书写" : "横排书写"}
             </button>
+            <ImagePoemPanel
+              accentColor={collection.color}
+              onApply={(t, c) => {
+                setTitle(t);
+                setContent(c);
+                setError("");
+              }}
+            />
           </div>
 
           <AnimatePresence>

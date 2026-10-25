@@ -4,6 +4,7 @@
 // ============================================================
 import { NextResponse } from "next/server";
 import { createRateLimiter, retryAfterHeader } from "@/lib/ratelimit";
+import { fetchChat, hasAnyKey } from "@/lib/ai-providers";
 import sharp from "sharp";
 
 export const runtime = "nodejs";
@@ -37,20 +38,6 @@ async function urlToDataUrl(url: string): Promise<string> {
 }
 
 // 文本 Provider（生成绘画提示词用）
-function resolveTextConfig(req: Request) {
-  const h = req.headers;
-  const key =
-    h.get("x-ai-key") || process.env.AI_API_KEY || process.env.OPENAI_API_KEY || "";
-  let baseUrl =
-    h.get("x-ai-base-url") ||
-    process.env.AI_BASE_URL ||
-    process.env.OPENAI_BASE_URL ||
-    "https://api.openai.com/v1";
-  baseUrl = baseUrl.replace(/\/+$/, "");
-  const model = h.get("x-ai-model") || process.env.AI_TEXT_MODEL || "gpt-4o-mini";
-  return { key, baseUrl, model };
-}
-
 // 图像 Provider（据提示词生图用）
 function resolveImageConfig(req: Request) {
   const h = req.headers;
@@ -81,7 +68,7 @@ function resolveImageConfig(req: Request) {
 
 // 第一步：调用文本模型，按固定模版生成绘画提示词（英文 + 中文）
 async function buildDrawingPrompt(
-  cfg: { key: string; baseUrl: string; model: string },
+  req: Request,
   title: string,
   content: string
 ): Promise<{ promptEn: string; promptZh: string }> {
@@ -98,26 +85,17 @@ async function buildDrawingPrompt(
 输出格式：只返回一个 JSON 对象，不要任何解释、前缀或 Markdown 代码块标记，格式为：
 {"prompt_en": "<一段完整、可直接用于文生图的英文提示词>", "prompt_zh": "<对应的中文翻译>"}`;
 
-  const resp = await fetch(`${cfg.baseUrl}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${cfg.key}`,
-    },
-    body: JSON.stringify({
-      model: cfg.model,
-      messages: [
-        {
-          role: "system",
-          content:
-            "你是一位精通 AI 绘画的提示词工程师，擅长把中国古典诗词转化为唯美的新中式插画提示词。只输出要求的 JSON。",
-        },
-        { role: "user", content: instruction },
-      ],
-      temperature: 0.8,
-      max_tokens: 900,
-      chat_template_kwargs: { enable_thinking: false },
-    }),
+  const resp = await fetchChat(req, {
+    messages: [
+      {
+        role: "system",
+        content:
+          "你是一位精通 AI 绘画的提示词工程师，擅长把中国古典诗词转化为唯美的新中式插画提示词。只输出要求的 JSON。",
+      },
+      { role: "user", content: instruction },
+    ],
+    temperature: 0.8,
+    max_tokens: 900,
   });
 
   if (!resp.ok) {
@@ -268,7 +246,6 @@ export async function POST(req: Request) {
       headers: { "Retry-After": retryAfterHeader(rl.reset), "X-RateLimit-Limit": String(rl.total), "X-RateLimit-Remaining": String(rl.remaining) },
     });
   }
-  const textCfg = resolveTextConfig(req);
   const imgCfg = resolveImageConfig(req);
   if (!imgCfg.key) {
     return NextResponse.json(
@@ -292,8 +269,8 @@ export async function POST(req: Request) {
   let promptEn = "";
   let promptZh = "";
   try {
-    if (textCfg.key) {
-      const r = await buildDrawingPrompt(textCfg, title, content);
+    if (hasAnyKey(req)) {
+      const r = await buildDrawingPrompt(req, title, content);
       promptEn = r.promptEn;
       promptZh = r.promptZh;
     }

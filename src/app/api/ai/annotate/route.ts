@@ -5,6 +5,7 @@
 import { NextResponse } from "next/server";
 import { cacheGet, cacheSet, hashKey } from "@/lib/kv";
 import { createRateLimiter, retryAfterHeader } from "@/lib/ratelimit";
+import { fetchChat, getPrimaryModel, hasAnyKey, NO_KEY_MESSAGE } from "@/lib/ai-providers";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -36,26 +37,6 @@ function extractText(data: unknown): string {
   return text;
 }
 
-function resolveConfig(req: Request) {
-  const h = req.headers;
-  const key =
-    h.get("x-ai-key") ||
-    process.env.AI_API_KEY ||
-    process.env.OPENAI_API_KEY ||
-    "";
-  let baseUrl =
-    h.get("x-ai-base-url") ||
-    process.env.AI_BASE_URL ||
-    process.env.OPENAI_BASE_URL ||
-    "https://api.openai.com/v1";
-  baseUrl = baseUrl.replace(/\/+$/, "");
-  const model =
-    h.get("x-ai-model") ||
-    process.env.AI_TEXT_MODEL ||
-    "gpt-4o-mini";
-  return { key, baseUrl, model };
-}
-
 // AI 赏析：每 IP 每 60 秒最多 10 次
 const annotateLimiter = createRateLimiter({ limit: 10, windowMs: 60_000 });
 
@@ -67,10 +48,9 @@ export async function POST(req: Request) {
       headers: { "Retry-After": retryAfterHeader(rl.reset), "X-RateLimit-Limit": String(rl.total), "X-RateLimit-Remaining": String(rl.remaining) },
     });
   }
-  const { key, baseUrl, model } = resolveConfig(req);
-  if (!key) {
+  if (!hasAnyKey(req)) {
     return NextResponse.json(
-      { error: "未配置 API Key。请在「设置 · AI」中填入你自己的 Key，或联系站长配置。" },
+      { error: NO_KEY_MESSAGE },
       { status: 400 }
     );
   }
@@ -95,7 +75,7 @@ export async function POST(req: Request) {
 
   // 仅当使用站点默认 Key（无访客个人 Key）时启用共享缓存，避免个人模型结果外泄
   const usePersonalKey = !!req.headers.get("x-ai-key");
-  const cacheKey = `ai:annot:${hashKey(model, title, author, dynasty, content)}`;
+  const cacheKey = `ai:annot:${hashKey(getPrimaryModel(req), title, author, dynasty, content)}`;
   if (!usePersonalKey && !refresh) {
     const hit = await cacheGet<string>(cacheKey);
     if (hit && hit.trim()) {
@@ -117,28 +97,18 @@ ${author ? `作者：${author}${dynasty ? "（" + dynasty + "）" : ""}\n` : ""}
 ${content}`;
 
   const callModel = async () => {
-    const resp = await fetch(`${baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${key}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          {
-            role: "system",
-            content:
-              "你是一位学养深厚的古典诗词鉴赏家，文笔典雅，善于点出诗中意境与妙处。请直接输出赏析正文，不要输出任何思考过程。",
-          },
-          { role: "user", content: prompt },
-        ],
-        temperature: 0.8,
-        max_tokens: 1200,
-        chat_template_kwargs: { enable_thinking: false },
-      }),
+    return fetchChat(req, {
+      messages: [
+        {
+          role: "system",
+          content:
+            "你是一位学养深厚的古典诗词鉴赏家，文笔典雅，善于点出诗中意境与妙处。请直接输出赏析正文，不要输出任何思考过程。",
+        },
+        { role: "user", content: prompt },
+      ],
+      temperature: 0.8,
+      max_tokens: 1200,
     });
-    return resp;
   };
 
   try {

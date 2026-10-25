@@ -5,30 +5,11 @@
 import { NextResponse } from "next/server";
 import { cacheGet, cacheSet, hashKey, getKv } from "@/lib/kv";
 import { createRateLimiter, retryAfterHeader } from "@/lib/ratelimit";
+import { fetchChat, getPrimaryModel, hasAnyKey, NO_KEY_MESSAGE } from "@/lib/ai-providers";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
 const CACHE_TTL = 60 * 60 * 24 * 7; // 7 天
-
-function resolveConfig(req: Request) {
-  const h = req.headers;
-  const key =
-    h.get("x-ai-key") ||
-    process.env.AI_API_KEY ||
-    process.env.OPENAI_API_KEY ||
-    "";
-  let baseUrl =
-    h.get("x-ai-base-url") ||
-    process.env.AI_BASE_URL ||
-    process.env.OPENAI_BASE_URL ||
-    "https://api.openai.com/v1";
-  baseUrl = baseUrl.replace(/\/+$/, "");
-  const model =
-    h.get("x-ai-model") ||
-    process.env.AI_TEXT_MODEL ||
-    "gpt-4o-mini";
-  return { key, baseUrl, model };
-}
 
 function extractText(data: unknown): string {
   const msg = (data as { choices?: { message?: Record<string, unknown> }[] })
@@ -62,10 +43,9 @@ export async function POST(req: Request) {
       headers: { "Retry-After": retryAfterHeader(rl.reset), "X-RateLimit-Limit": String(rl.total), "X-RateLimit-Remaining": String(rl.remaining) },
     });
   }
-  const { key, baseUrl, model } = resolveConfig(req);
-  if (!key) {
+  if (!hasAnyKey(req)) {
     return NextResponse.json(
-      { error: "未配置 API Key。请在「设置 · AI」中填入你自己的 Key。" },
+      { error: NO_KEY_MESSAGE },
       { status: 400 }
     );
   }
@@ -84,7 +64,7 @@ export async function POST(req: Request) {
 
   // 检查缓存
   const usePersonalKey = !!req.headers.get("x-ai-key");
-  const cacheKey = `ai:semantic:${hashKey(model + query + limit)}`;
+  const cacheKey = `ai:semantic:${hashKey(getPrimaryModel(req) + query + limit)}`;
   if (!usePersonalKey) {
     const hit = await cacheGet<string>(cacheKey);
     if (hit) {
@@ -142,25 +122,16 @@ ${JSON.stringify(poemList, null, 2)}
 5. 直接输出 JSON，不要有任何解释`;
 
   try {
-    const resp = await fetch(`${baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${key}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          {
-            role: "system",
-            content: "你是古典诗词专家，擅长理解用户的查询意图并推荐相关诗词。只输出 JSON。",
-          },
-          { role: "user", content: prompt },
-        ],
-        temperature: 0.3,
-        max_tokens: 1000,
-        chat_template_kwargs: { enable_thinking: false },
-      }),
+    const resp = await fetchChat(req, {
+      messages: [
+        {
+          role: "system",
+          content: "你是古典诗词专家，擅长理解用户的查询意图并推荐相关诗词。只输出 JSON。",
+        },
+        { role: "user", content: prompt },
+      ],
+      temperature: 0.3,
+      max_tokens: 1000,
     });
 
     if (!resp.ok) {
