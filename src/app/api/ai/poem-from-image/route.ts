@@ -158,14 +158,14 @@ ${styleText}。题目自拟（2-6 字），正文不超过 8 行。要求从画�
         signal: AbortSignal.timeout(45_000),
         body: JSON.stringify({
           model: p.model,
-          // deepseek-flash 是思考模型：压低推理档位，避免 token 被推理耗尽
+          // deepseek-flash 是思考模型：压低推理档位提速；不设 max_tokens，
+          // 让推理自然走完（路由层 45s 超时兜底）
           ...(p.baseUrl.includes("deepseek") ? { reasoning_effort: "low" } : {}),
           messages: [
             { role: "system", content: system },
             { role: "user", content },
           ],
           temperature: 0.8,
-          max_tokens: 2500,
         }),
       });
       if (!resp.ok) {
