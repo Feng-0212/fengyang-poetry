@@ -2,10 +2,12 @@
 // API: 看图赋诗（POST /api/ai/poem-from-image）
 // 用户上传图片 → 视觉模型读取画面 → 生成一首诗（题目+正文）
 // 视觉模型走 OpenAI 兼容的多模态消息格式（image_url + text）
-// 供应商链：访客 Header > AI_VISION_* 专用配置 > 站点 AI_* 配置
+// 供应商链：访客 Header > AI_VISION_* 专用配置 > DeepSeek 视觉 > 站点 AI_* 配置
 // 环境变量：
-//   AI_VISION_KEY / AI_VISION_BASE_URL / AI_VISION_MODEL
-//   未配置专用视觉配置时回退站点 AI_API_KEY + 默认视觉模型
+//   AI_VISION_KEY / AI_VISION_BASE_URL / AI_VISION_MODEL（可选专用视觉配置）
+//   DEEPSEEK_API_KEY / DEEPSEEK_VISION_MODEL（DeepSeek 视觉兜底，默认 deepseek-flash）
+// 注意：deepseek-flash 为思考模型，须带 reasoning_effort:"low" 并给足 max_tokens，
+//       否则推理 token 耗尽预算导致 content 为空
 // ============================================================
 import { NextResponse } from "next/server";
 import { createRateLimiter, retryAfterHeader } from "@/lib/ratelimit";
@@ -17,6 +19,7 @@ const visionLimiter = createRateLimiter({ limit: 5, windowMs: 60_000 });
 
 const DEFAULT_VISION_BASE = "https://open.bigmodel.cn/api/paas/v4";
 const DEFAULT_VISION_MODEL = "glm-4v-flash";
+const DEFAULT_DEEPSEEK_VISION_MODEL = "deepseek-flash";
 
 function cleanBase(url: string): string {
   return url.replace(/\/+$/, "");
@@ -53,7 +56,16 @@ function getVisionChain(req: Request): VisionProvider[] {
       model: visionModel,
     });
   }
-  // ③ 站点通用配置 + 视觉模型名（中转站多半代理了视觉模型，值得一试）
+  // ③ DeepSeek 视觉兜底（deepseek-flash 原生多模态，无需额外注册）
+  const dsKey = process.env.DEEPSEEK_API_KEY;
+  if (dsKey && !chain.some((p) => p.key === dsKey)) {
+    chain.push({
+      key: dsKey,
+      baseUrl: cleanBase(process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com"),
+      model: process.env.DEEPSEEK_VISION_MODEL || DEFAULT_DEEPSEEK_VISION_MODEL,
+    });
+  }
+  // ④ 站点通用配置 + 视觉模型名（中转站若代理了视觉模型值得一试）
   const siteKey = process.env.AI_API_KEY || process.env.OPENAI_API_KEY;
   if (siteKey && !chain.some((p) => p.key === siteKey)) {
     chain.push({
@@ -92,7 +104,7 @@ export async function POST(req: Request) {
   const chain = getVisionChain(req);
   if (chain.length === 0) {
     return NextResponse.json(
-      { error: "未配置视觉模型。请联系站长在环境变量中配置 AI_VISION_KEY（推荐免费注册智谱获取 glm-4v-flash 的 Key）。" },
+      { error: "未配置视觉模型：请配置 AI_VISION_KEY 或 DEEPSEEK_API_KEY 环境变量。" },
       { status: 400 }
     );
   }
@@ -146,12 +158,14 @@ ${styleText}。题目自拟（2-6 字），正文不超过 8 行。要求从画�
         signal: AbortSignal.timeout(45_000),
         body: JSON.stringify({
           model: p.model,
+          // deepseek-flash 是思考模型：压低推理档位，避免 token 被推理耗尽
+          ...(p.baseUrl.includes("deepseek") ? { reasoning_effort: "low" } : {}),
           messages: [
             { role: "system", content: system },
             { role: "user", content },
           ],
           temperature: 0.8,
-          max_tokens: 600,
+          max_tokens: 2500,
         }),
       });
       if (!resp.ok) {
