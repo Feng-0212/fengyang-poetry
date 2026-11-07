@@ -4,7 +4,7 @@
 // ============================================================
 import { NextResponse } from "next/server";
 import { createRateLimiter, retryAfterHeader } from "@/lib/ratelimit";
-import { fetchChat, hasAnyKey } from "@/lib/ai-providers";
+import { fetchChat, hasAnyKey, aiQuotaGuard } from "@/lib/ai-providers";
 import sharp from "sharp";
 
 export const runtime = "nodejs";
@@ -263,6 +263,12 @@ export async function POST(req: Request) {
   const { title = "", content = "", season } = body;
   if (!content.trim()) {
     return NextResponse.json({ error: "诗词内容为空" }, { status: 400 });
+  }
+
+  /* 全站每日熔断（仅站点 Key 计数；生图成本高，一并计入） */
+  const quotaErr = await aiQuotaGuard(req);
+  if (quotaErr) {
+    return NextResponse.json({ error: quotaErr }, { status: 429 });
   }
 
   // 第一步：生成绘画提示词

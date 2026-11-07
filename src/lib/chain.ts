@@ -25,6 +25,7 @@ export type VerifyReason =
   | "duplicate"
   | "not_found"
   | "rate_limited"
+  | "daily_quota"
   | "upstream_error"
   | "upstream_unreachable";
 

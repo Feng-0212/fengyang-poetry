@@ -6,7 +6,7 @@
 // ============================================================
 import { NextResponse } from "next/server";
 import { createRateLimiter, retryAfterHeader } from "@/lib/ratelimit";
-import { fetchChat, hasAnyKey, NO_KEY_MESSAGE } from "@/lib/ai-providers";
+import { fetchChat, hasAnyKey, aiQuotaGuard, NO_KEY_MESSAGE } from "@/lib/ai-providers";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -87,6 +87,12 @@ export async function POST(req: Request) {
     if (author) parts.push(`可参考：${author}${dynasty ? `（${dynasty}）` : ""}的笔法`);
     if (content) parts.push(`参考原作：\n${content}`);
     prompt = `请创作一首新诗。\n${parts.join("\n")}\n\n要求：独立成篇，不照抄参考原作，但可融入其意境。`;
+  }
+
+  /* 全站每日熔断（仅站点 Key 计数） */
+  const quotaErr = await aiQuotaGuard(req);
+  if (quotaErr) {
+    return NextResponse.json({ error: quotaErr }, { status: 429 });
   }
 
   const callModel = async () => {

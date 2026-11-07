@@ -12,10 +12,21 @@ import {
   isAdminEmail,
   claimLegacy,
 } from "@/lib/user";
+import { createRateLimiter, retryAfterHeader } from "@/lib/ratelimit";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/* 注册限流：每 IP 每小时 5 次，防批量注册垃圾账号 */
+const registerLimiter = createRateLimiter({ limit: 5, windowMs: 60 * 60 * 1000 });
+
 export async function POST(req: NextRequest) {
+  const rl = await registerLimiter.check(req);
+  if (!rl.success) {
+    return new Response(null, {
+      status: 429,
+      headers: { "Retry-After": retryAfterHeader(rl.reset), "X-RateLimit-Limit": String(rl.total), "X-RateLimit-Remaining": String(rl.remaining) },
+    });
+  }
   let body: { email?: string; password?: string; name?: string };
   try {
     body = await req.json();

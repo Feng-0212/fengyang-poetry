@@ -32,6 +32,7 @@ const REASON_TEXT: Record<VerifyReason, string> = {
   duplicate: "此句方才已有人吟过，须另觅新句",
   not_found: "诗库查无、AI 考证亦未通过——恐非真实诗句，换一句试试",
   rate_limited: "验证太频繁了，稍候片刻再吟",
+  daily_quota: "今日 AI 考证额度已用完（每天 500 次），明天再来～",
   upstream_error: "诗库服务出错，请稍后再试",
   upstream_unreachable: "诗库与 AI 考证都暂时不可用，请稍后再试",
 };

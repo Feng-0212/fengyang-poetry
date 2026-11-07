@@ -5,7 +5,7 @@
 import { NextResponse } from "next/server";
 import { createRateLimiter, retryAfterHeader } from "@/lib/ratelimit";
 import { TAG_POOL } from "@/lib/tags";
-import { fetchChat, hasAnyKey, NO_KEY_MESSAGE } from "@/lib/ai-providers";
+import { fetchChat, hasAnyKey, aiQuotaGuard, NO_KEY_MESSAGE } from "@/lib/ai-providers";
 
 function extractText(data: unknown): string {
   const msg = (data as { choices?: { message?: Record<string, unknown> }[] })
@@ -78,6 +78,12 @@ export async function POST(req: Request) {
   const { title = "", author = "", content = "" } = body;
   if (!content.trim()) {
     return NextResponse.json({ error: "诗词内容为空" }, { status: 400 });
+  }
+
+  /* 全站每日熔断（仅站点 Key 计数） */
+  const quotaErr = await aiQuotaGuard(req);
+  if (quotaErr) {
+    return NextResponse.json({ error: quotaErr }, { status: 429 });
   }
 
   const prompt = `你是一位古典诗词鉴赏家。请根据下面这首诗词，从标签池中推荐 2-3 个最贴切的标签。

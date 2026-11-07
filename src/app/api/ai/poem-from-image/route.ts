@@ -11,6 +11,7 @@
 // ============================================================
 import { NextResponse } from "next/server";
 import { createRateLimiter, retryAfterHeader } from "@/lib/ratelimit";
+import { aiQuotaGuard } from "@/lib/ai-providers";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -124,6 +125,12 @@ export async function POST(req: Request) {
   // base64 体积上限约 5MB（原图约 3.7MB），超出直接拒绝
   if (image.length > 5_000_000) {
     return NextResponse.json({ error: "图片太大，请换一张小一些的图" }, { status: 400 });
+  }
+
+  /* 全站每日熔断（视觉调用成本最高，必计入；带个人 Key 的访客不受限） */
+  const quotaErr = await aiQuotaGuard(req);
+  if (quotaErr) {
+    return NextResponse.json({ error: quotaErr }, { status: 429 });
   }
 
   const system =

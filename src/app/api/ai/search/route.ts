@@ -5,7 +5,7 @@
 import { NextResponse } from "next/server";
 import { cacheGet, cacheSet, hashKey, getKv } from "@/lib/kv";
 import { createRateLimiter, retryAfterHeader } from "@/lib/ratelimit";
-import { fetchChat, getPrimaryModel, hasAnyKey, NO_KEY_MESSAGE } from "@/lib/ai-providers";
+import { fetchChat, getPrimaryModel, hasAnyKey, aiQuotaGuard, NO_KEY_MESSAGE } from "@/lib/ai-providers";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -73,6 +73,12 @@ export async function POST(req: Request) {
         return NextResponse.json({ ...cached, cached: true });
       } catch {}
     }
+  }
+
+  /* 全站每日熔断（仅站点 Key 计数，缓存命中不至此处） */
+  const quotaErr = await aiQuotaGuard(req);
+  if (quotaErr) {
+    return NextResponse.json({ error: quotaErr }, { status: 429 });
   }
 
   // 获取所有诗词（优先 Redis，无 Redis 时降级内存/返回空，避免模块级崩溃）

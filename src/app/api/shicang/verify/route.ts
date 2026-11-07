@@ -5,8 +5,12 @@
 //   ② DeepSeek 兜底考证：词库未收录（版本异文等）或诗藏离线时，
 //      由 AI 判断是否为真实诗句并给出出处（via=ai 标记，前端展示「AI 考证」）
 // 环境变量：DEEPSEEK_API_KEY（必填才启用②）、DEEPSEEK_BASE_URL、DEEPSEEK_MODEL
+// 限流：AI 路径走 Redis（每 IP 8 次/分 + 全站 40 次/分）+ 全站每日熔断
 // ============================================================
 import { NextRequest, NextResponse } from "next/server";
+import { createRateLimiter, retryAfterHeader } from "@/lib/ratelimit";
+import { getKv } from "@/lib/kv";
+import { aiQuotaGuard } from "@/lib/ai-providers";
 
 const SHICANG_BASE = process.env.SHICANG_BASE || "https://shicang.poeagent.top";
 const LLM_BASE = (process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com").replace(/\/+$/, "");
@@ -16,16 +20,8 @@ const LLM_MODEL = process.env.DEEPSEEK_MODEL || "deepseek-chat";
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
-/* 简易限流（实例内存级）：保护 DeepSeek 额度不被刷 */
-const buckets = new Map<string, number[]>();
-function allow(key: string, limit: number, windowMs: number): boolean {
-  const now = Date.now();
-  const arr = (buckets.get(key) || []).filter((t) => now - t < windowMs);
-  if (arr.length >= limit) return false;
-  arr.push(now);
-  buckets.set(key, arr);
-  return true;
-}
+/* AI 兜底路径每 IP 限流（Redis 全局） */
+const feihuaAiLimiter = createRateLimiter({ limit: 8, windowMs: 60_000 });
 
 interface AiVerdict {
   real: boolean;
@@ -121,11 +117,33 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(upstream);
   }
 
-  /* ② DeepSeek 兜底考证（带限流） */
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
-  if (!allow(`ip:${ip}`, 8, 60_000) || !allow("global", 40, 60_000)) {
+  /* ② DeepSeek 兜底考证（Redis 全局限流：每 IP 8 次/分 + 全站 40 次/分 + 每日熔断） */
+  const rl = await feihuaAiLimiter.check(req);
+  if (!rl.success) {
     return NextResponse.json(
       { ok: false, matched: false, reason: "rate_limited" },
+      { status: 429, headers: { "Retry-After": retryAfterHeader(rl.reset) } }
+    );
+  }
+  const kv = await getKv();
+  if (kv) {
+    const bucket = Math.floor(Date.now() / 60_000);
+    try {
+      const gk = `ratelimit:feihua-global:${bucket}`;
+      const n = await kv.incr(gk);
+      if (n === 1) await kv.expire(gk, 120);
+      if (n > 40) {
+        return NextResponse.json(
+          { ok: false, matched: false, reason: "rate_limited" },
+          { status: 429 }
+        );
+      }
+    } catch { /* 计数失败放行 */ }
+  }
+  const quotaErr = await aiQuotaGuard(req);
+  if (quotaErr) {
+    return NextResponse.json(
+      { ok: false, matched: false, reason: "daily_quota" },
       { status: 429 }
     );
   }

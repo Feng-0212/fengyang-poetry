@@ -2,7 +2,11 @@
 // AI 供应商链：主配置（访客 Key → 站点环境变量）失败时自动降级
 // 到 DeepSeek（DEEPSEEK_API_KEY），避免单一上游故障导致全站 AI 不可用
 // 所有 OpenAI 兼容的 chat/completions 调用统一走 fetchChat
+// 另含全站 AI 每日熔断：仅统计用站点 Key 的调用，访客自带 Key 不限
 // ============================================================
+import { getKv } from "./kv";
+
+export const AI_DAILY_LIMIT = parseInt(process.env.AI_DAILY_LIMIT || "500", 10);
 
 export interface AIProvider {
   key: string;
@@ -123,3 +127,26 @@ export async function fetchChat(
 
 export const NO_KEY_MESSAGE =
   "未配置 API Key。请在「设置 · AI」中填入你自己的 Key，或联系站长配置。";
+
+/**
+ * 全站 AI 每日熔断：仅统计用站点 Key 的调用（访客自带 Key 直接放行）。
+ * 返回 null 表示放行；返回字符串为超限提示文案（路由转 429 返回）。
+ * 放在路由的缓存命中检查之后、真正发起模型调用之前，缓存命中不计费。
+ */
+export async function aiQuotaGuard(req: Request): Promise<string | null> {
+  if (req.headers.get("x-ai-key")) return null; // BYOK 不占站点额度
+  const kv = await getKv();
+  if (!kv) return null; // 无 Redis 时降级放行（与限流同策略）
+  try {
+    const day = new Date().toISOString().slice(0, 10);
+    const key = `ai:global:daily:${day}`;
+    const n = await kv.incr(key);
+    if (n === 1) await kv.expire(key, 60 * 60 * 48);
+    if (n > AI_DAILY_LIMIT) {
+      return `今日 AI 体验额度已用完（每天 ${AI_DAILY_LIMIT} 次），明天再来吧；或在「设置 · AI」填入自己的 Key 畅快使用`;
+    }
+  } catch {
+    /* 计数失败不拦截 */
+  }
+  return null;
+}
