@@ -93,6 +93,26 @@ export default function Navbar() {
             </Link>
           ))}
 
+          {/* 家族导航：诗藏家族互链（门户 poeagent.top） */}
+          <a
+            href="https://shicang.poeagent.top"
+            target="_blank"
+            rel="noopener"
+            className="nav-link hide-mobile"
+            title="诗藏 · 93 万首诗词数据库"
+          >
+            诗藏书库
+          </a>
+          <a
+            href="https://agent.poeagent.top"
+            target="_blank"
+            rel="noopener"
+            className="nav-link hide-mobile"
+            title="诗藏 AI 问答 · 有引必答"
+          >
+            AI 问答
+          </a>
+
           {/* 用户区 */}
           {user ? (
             <div className="flex items-center gap-2 flex-shrink-0">
