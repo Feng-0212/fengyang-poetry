@@ -94,6 +94,8 @@ export default function RootLayout({
           </ErrorBoundary>
         </LazyMotion>
         <ServiceWorkerRegister />
+        {/* 诗藏家族统一访问统计（四站通用埋点，脚本按 hostname 区分站点） */}
+        <script async src="/stats-beacon.js" />
       </body>
     </html>
   );

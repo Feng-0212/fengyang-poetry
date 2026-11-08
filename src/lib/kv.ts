@@ -13,6 +13,10 @@ type RedisLike = {
   incr: (key: string) => Promise<number>;
   /** 设置 key 过期时间（秒） */
   expire: (key: string, seconds: number) => Promise<unknown>;
+  /** 向集合添加成员，返回添加后集合大小（统计系统用） */
+  sadd: (key: string, member: string) => Promise<number>;
+  /** 返回集合大小 */
+  scard: (key: string) => Promise<number>;
 };
 
 let cached: RedisLike | null | undefined;
@@ -71,6 +75,15 @@ export async function getKv(): Promise<RedisLike | null> {
       mem.set(key, { v: hit?.v ?? null, exp: Date.now() + seconds * 1000 });
       return 1;
     },
+    async sadd(key: string, member: string): Promise<number> {
+      let set = memSets.get(key);
+      if (!set) { set = new Set<string>(); memSets.set(key, set); }
+      set.add(member);
+      return set.size;
+    },
+    async scard(key: string): Promise<number> {
+      return memSets.get(key)?.size ?? 0;
+    },
   };
   cached = fallback;
   return cached;
@@ -78,6 +91,9 @@ export async function getKv(): Promise<RedisLike | null> {
 
 /** 内存回退存储（本地 dev / 无 Redis 时） */
 const mem = new Map<string, { v: unknown; exp: number }>();
+
+// 内存 sadd 集合（统计系统内存回退用）
+const memSets = new Map<string, Set<string>>();
 
 // 内存 incr 计数器（与 mem 共用同一份存储）
 const counters = new Map<string, number>();
