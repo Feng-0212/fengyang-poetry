@@ -14,6 +14,7 @@ import { SOLAR_TERMS_META } from "@/lib/solarterms";
 import { addPoem } from "@/lib/api";
 import { generateWrite } from "@/lib/ai";
 import TagInput from "@/components/poem/TagInput";
+import ImagePoemPanel from "@/components/poem/ImagePoemPanel";
 import { cn } from "@/lib/utils";
 import type { SeasonKey, SolarTermKey } from "@/types/poem";
 import { COLLECTION_IDS } from "@/types/poem";
@@ -250,11 +251,19 @@ function WriteForm() {
             </div>
           </div>
 
-          <div className="mt-4 flex items-center gap-4">
+          <div className="mt-4 flex items-center gap-4 flex-wrap">
             <button onClick={() => setIsVertical(!isVertical)}
               className={cn("flex items-center gap-2 text-xs px-3 py-1.5 rounded-full border transition-all", isVertical ? "border-cinnabar/40 text-cinnabar bg-cinnabar/5" : "border-ink/10 text-ink-light hover:border-ink/20")}>
               {isVertical ? "竖排书写" : "横排书写"}
             </button>
+            <ImagePoemPanel
+              accentColor="#C14A3F"
+              onApply={(t, c) => {
+                setTitle(t);
+                setContent(c);
+                setError("");
+              }}
+            />
 
             {/* 可见性：默认公开，可切换私密 */}
             <div className="flex items-center gap-1.5">
