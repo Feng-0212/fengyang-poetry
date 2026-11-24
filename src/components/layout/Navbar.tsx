@@ -1,10 +1,11 @@
 // ============================================================
-// 四时墨苑 - 导航栏（含搜索）
+// 四时墨苑 - 导航栏（含搜索；移动端为汉堡下拉菜单）
 // ============================================================
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useSolarTerm } from "@/hooks/useSolarTerm";
 import { useSearch } from "@/components/layout/ClientShell";
 import { usePasswordGate } from "@/components/auth/PasswordGate";
@@ -18,11 +19,23 @@ const NAV_LINKS: { href: string; label: string; prefetch?: boolean }[] = [
   { href: "/settings", label: "设置" },
 ];
 
+/* 诗藏家族互链（新窗口打开，不参与当前页高亮） */
+const FAMILY_LINKS: { href: string; label: string; title: string }[] = [
+  { href: "https://shicang.poeagent.top", label: "诗藏书库", title: "诗藏 · 93 万首诗词数据库" },
+  { href: "https://agent.poeagent.top", label: "AI 问答", title: "诗藏 AI 问答 · 有引必答" },
+];
+
 export default function Navbar() {
   const pathname = usePathname();
   const solarTerm = useSolarTerm();
   const { openSearch } = useSearch();
   const { user, logout } = usePasswordGate();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  /* 路由变化时自动收起移动菜单 */
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
 
   return (
     <nav className="navbar pt-safe">
@@ -113,6 +126,24 @@ export default function Navbar() {
             AI 问答
           </a>
 
+          {/* 移动端：汉堡菜单按钮（桌面隐藏） */}
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            className="hide-desktop flex-shrink-0 w-9 h-9 rounded-lg border border-ink/10 items-center justify-center text-ink-dark transition-colors hover:bg-ink/5"
+            aria-label={menuOpen ? "关闭菜单" : "打开菜单"}
+            aria-expanded={menuOpen}
+          >
+            {menuOpen ? (
+              <svg className="w-5 h-5 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 7h16M4 12h16M4 17h16" />
+              </svg>
+            )}
+          </button>
+
           {/* 用户区 */}
           {user ? (
             <div className="flex items-center gap-2 flex-shrink-0">
@@ -147,6 +178,52 @@ export default function Navbar() {
           )}
         </div>
       </div>
+
+      {/* 移动端下拉菜单（桌面隐藏） */}
+      {menuOpen && (
+        <div className="hide-desktop border-t border-ink/8 bg-[color:var(--card-bg,#fbf8f1)] shadow-ink">
+          <div className="max-w-6xl mx-auto px-4 py-2 flex flex-col">
+            {NAV_LINKS.map((link) => {
+              const active =
+                pathname === link.href ||
+                (link.href === "/search" && pathname?.startsWith("/search"));
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  prefetch={link.prefetch ?? true}
+                  className={cn(
+                    "flex items-center justify-between px-3 py-3 rounded-lg text-[15px] transition-colors",
+                    active ? "bg-cinnabar/8 text-cinnabar font-medium" : "text-ink-dark hover:bg-ink/5"
+                  )}
+                >
+                  {link.label}
+                  {active && <span className="text-xs text-cinnabar/70">当前页</span>}
+                </Link>
+              );
+            })}
+            <div className="my-1 h-px bg-ink/8" />
+            {FAMILY_LINKS.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                target="_blank"
+                rel="noopener"
+                title={link.title}
+                className="flex items-center justify-between px-3 py-3 rounded-lg text-[15px] text-ink-dark hover:bg-ink/5 transition-colors"
+              >
+                {link.label}
+                <span className="text-xs text-ink-light/60">↗</span>
+              </a>
+            ))}
+            {/* 节气点缀（与桌面端一致的小细节） */}
+            <div className="flex items-center gap-2 px-3 pt-2 pb-1 text-xs text-ink-light/70">
+              <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: solarTerm.color }} />
+              {solarTerm.name} · 四时墨苑
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
