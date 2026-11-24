@@ -1,6 +1,7 @@
 // ============================================================
 // 每日一诗 — 首页「今日节气 + 应景一首」
-// 按日期确定性选诗（同一天所有访客看到同一首），优先当季。
+// 优先诗藏词库（按日期确定性选诗，当天全网同一首，链接到诗藏原文）；
+// 诗藏不可达时回退用户作品（原逻辑不变）。
 // ============================================================
 "use client";
 
@@ -11,14 +12,41 @@ import { getAllPoems } from "@/lib/api";
 import { getSolarTerm } from "@/lib/solarterms";
 import type { Poem } from "@/types/poem";
 
+interface ClassicPoem {
+  date: string;
+  id: number;
+  title: string;
+  poet: string;
+  dynasty: string | null;
+  form: string | null;
+  body: string;
+  url: string;
+}
+
 export default function PoemOfTheDay() {
   const [poem, setPoem] = useState<Poem | null>(null);
+  const [classic, setClassic] = useState<ClassicPoem | null>(null);
   const [loading, setLoading] = useState(true);
   const term = getSolarTerm(new Date());
 
   useEffect(() => {
     let alive = true;
     (async () => {
+      // ① 诗藏词库（优先）
+      try {
+        const res = await fetch("/api/daily-poem", { signal: AbortSignal.timeout(9000) });
+        if (res.ok) {
+          const j = await res.json();
+          if (alive && j.title && j.body) {
+            setClassic(j);
+            setLoading(false);
+            return;
+          }
+        }
+      } catch {
+        /* 回退用户作品 */
+      }
+      // ② 回退：用户诗库
       try {
         const all = await getAllPoems();
         if (!alive) return;
@@ -45,24 +73,27 @@ export default function PoemOfTheDay() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (!loading && !poem) return null;
+  if (!loading && !poem && !classic) return null;
 
   const dateStr = new Date().toLocaleDateString("zh-CN", {
     month: "long",
     day: "numeric",
   });
 
+  const bodyText = classic?.body ?? poem?.content ?? "";
   const lines =
-    poem?.content
+    bodyText
       .split(/[，。；！？\n]/)
       .map((s) => s.trim())
       .filter(Boolean)
       .slice(0, 2)
       .join(" · ") || "";
 
-  const authorLine = poem?.author
-    ? `${poem.author}${poem.dynasty ? " · " + poem.dynasty : ""}`
-    : "佚名";
+  const authorLine = classic
+    ? `${classic.poet}${classic.dynasty ? " · " + classic.dynasty : ""}`
+    : poem?.author
+      ? `${poem.author}${poem.dynasty ? " · " + poem.dynasty : ""}`
+      : "佚名";
 
   return (
     <section className="max-w-4xl mx-auto px-6 mb-14">
@@ -96,19 +127,54 @@ export default function PoemOfTheDay() {
           </span>
         </div>
 
-        {loading || !poem ? (
+        {loading || (!poem && !classic) ? (
           <div className="relative z-10">
             <div className="skeleton w-40 h-7 mb-3" />
             <div className="skeleton w-full h-4 mb-2" />
             <div className="skeleton w-2/3 h-4" />
           </div>
-        ) : (
-          <Link href={`/poem/${poem.id}`} className="block group relative z-10">
+        ) : classic ? (
+          /* 诗藏词库模式：跳转诗藏原文页 */
+          <a href={classic.url} target="_blank" rel="noopener" className="block group relative z-10">
             <h2
               className="font-[var(--font-mashan)] text-2xl md:text-3xl text-ink-dark mb-2 group-hover:text-cinnabar transition-colors"
               style={{ fontFamily: "var(--font-mashan)" }}
             >
-              《{poem.title}》
+              《{classic.title}》
+            </h2>
+            <div className="text-xs text-ink-light mb-4">
+              {authorLine}
+              <span className="ml-2 rounded px-1.5 py-0.5 text-[10px]" style={{ backgroundColor: `${term.color}18`, color: term.color }}>
+                诗藏词库
+              </span>
+            </div>
+            <p className="text-base md:text-lg text-ink leading-loose mb-5">
+              {lines}
+            </p>
+            <span className="inline-flex items-center gap-1.5 text-sm text-cinnabar/90 group-hover:gap-2.5 transition-all">
+              到诗藏品读全篇
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M17 8l4 4m0 0l-4 4m4-4H3"
+                />
+              </svg>
+            </span>
+          </a>
+        ) : (
+          <Link href={`/poem/${poem!.id}`} className="block group relative z-10">
+            <h2
+              className="font-[var(--font-mashan)] text-2xl md:text-3xl text-ink-dark mb-2 group-hover:text-cinnabar transition-colors"
+              style={{ fontFamily: "var(--font-mashan)" }}
+            >
+              《{poem!.title}》
             </h2>
             <div className="text-xs text-ink-light mb-4">{authorLine}</div>
             <p className="text-base md:text-lg text-ink leading-loose mb-5">

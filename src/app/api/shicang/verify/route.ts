@@ -55,6 +55,9 @@ async function aiVerify(line: string, char: string): Promise<AiVerdict | null> {
             "1. 逐字见于传世作品，或存在著名版本异文（如「春风又绿江南岸」一作「春风自绿江南岸」、「床前明月光」一作「床前看月光」），均算真实；\n" +
             "2. 凭空编造、多句拼接、记忆严重走样、现代仿古伪作，不算真实；\n" +
             "3. 不确定时从严判为不真实。\n" +
+            "判定示例：\n" +
+            '输入「春风又绿江南岸」→ {"real":true,"title":"泊船瓜洲","poet":"王安石","dynasty":"宋","full_line":"春风又绿江南岸","note":"名句，一作春风自绿江南岸"}\n' +
+            '输入「月照高楼一片白」→ {"real":false,"title":null,"poet":null,"dynasty":null,"full_line":null,"note":"传世诗词中未见此句，疑为拼凑"}\n' +
             '只输出 JSON：{"real":布尔,"title":"诗题或null","poet":"作者或null","dynasty":"朝代或null","full_line":"该句在原作中的完整原句","note":"不超过20字的简短说明"}',
         },
         {

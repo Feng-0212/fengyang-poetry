@@ -138,6 +138,7 @@ ${JSON.stringify(poemList, null, 2)}
       ],
       temperature: 0.3,
       max_tokens: 1000,
+      response_format: { type: "json_object" },
     });
 
     if (!resp.ok) {

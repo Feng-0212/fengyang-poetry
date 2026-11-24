@@ -109,6 +109,7 @@ ${content}`;
       ],
       temperature: 0.7,
       max_tokens: 150,
+      response_format: { type: "json_object" },
     });
 
     if (!resp.ok) {
